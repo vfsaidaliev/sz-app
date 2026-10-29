@@ -5,51 +5,423 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Генератор СЗ</title>
 <style>
-body{font-family:sans-serif;margin:0;padding:12px;background:#f2f4f7;color:#111}
-h1{font-size:20px;margin:4px 0 12px}
-h2{font-size:15px;margin:18px 0 4px;color:#1f5fbf}
-label{display:block;font-size:13px;color:#555;margin:10px 0 3px}
-label.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:#111}
-label.chk input{width:auto}
-input,select,textarea{width:100%;box-sizing:border-box;padding:9px;font-size:15px;border:1px solid #ccc;border-radius:8px;background:#fff}
+body{font-family:sans-serif;margin:0;padding:12px 12px 90px;background:#f2f4f7;color:#111}
+h1{font-size:19px;margin:4px 0 4px}
+.prog{font-size:13px;color:#1f5fbf;margin-bottom:10px}
+h2{font-size:17px;margin:6px 0 10px}
+label{display:block;font-size:14px;color:#444;margin:12px 0 4px}
+small.h{display:block;color:#888;font-size:11px;margin-top:2px}
+input,select,textarea{width:100%;box-sizing:border-box;padding:11px;font-size:16px;border:1px solid #bbb;border-radius:10px;background:#fff}
 textarea{min-height:80px}
-button{width:100%;padding:12px;font-size:16px;margin-top:10px;border:0;border-radius:8px;background:#1f5fbf;color:#fff}
-button.alt{background:#555}
-pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:8px;padding:10px;font-size:14px}
-.row{display:flex;gap:8px}.row>div{flex:1}
+button{width:100%;padding:14px;font-size:17px;margin-top:10px;border:0;border-radius:10px;background:#1f5fbf;color:#fff}
+button.alt{background:#666}
+button.grp{background:#fff;color:#111;border:2px solid #c9d6ea;text-align:left;font-size:17px;padding:14px;margin-top:8px}
+button.grp.on{border-color:#1f5fbf;background:#eaf1fc}
+.items{background:#fff;border:1px solid #ddd;border-radius:10px;padding:4px 10px;margin:4px 0 6px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #eee;font-size:16px}
+.item:last-child{border-bottom:0}
+.item input{width:24px;height:24px;flex:none;margin-top:1px}
+.two{display:flex;gap:8px}.two>*{flex:1}
+.pick{display:flex;gap:8px;flex-wrap:wrap}
+.pick button{width:auto;flex:1 1 40%;background:#fff;color:#111;border:2px solid #c9d6ea;padding:11px;font-size:15px;margin-top:4px}
+.pick button.on{border-color:#1f5fbf;background:#eaf1fc}
+.chips button{width:auto;display:inline-block;background:#e9edf3;color:#222;font-size:13px;padding:8px 10px;margin:4px 4px 0 0;border-radius:16px}
+.sum{background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 10px;font-size:14px;margin-top:10px}
+pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:10px;padding:10px;font-size:14px}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 12px;background:#f2f4f7;border-top:1px solid #ddd}
+.nav button{margin:0}
+.mail{display:flex;align-items:center;gap:6px}.mail input{flex:1}.mail span{font-size:16px;white-space:nowrap}
+.step{display:none}.step.on{display:block}
 </style>
 </head>
 <body>
-<h1>Генератор служебных записок</h1>
+<h1>Служебная записка о нарушении</h1>
+<div class="prog" id="prog"></div>
 
-<label>Тип нарушения</label>
-<select id="type">
-<option value="alco">Появление в состоянии алкогольного опьянения</option>
-<option value="buy">Приобретение алкоголя у местных жителей / в магазине</option>
-<option value="fight">Конфликтная ситуация / драка</option>
-<option value="other">Иное нарушение</option>
-</select>
+<!-- ШАГ 1 -->
+<div class="step" id="s1">
+<h2>1. Что случилось?</h2>
+<div style="font-size:14px;color:#555">Нажмите на подходящую группу и отметьте, что именно произошло. Можно отметить несколько.</div>
+<div id="groups"></div>
+<div id="otherBox" style="display:none">
+<label>Опишите нарушение своими словами</label>
+<input id="otherText" placeholder="находился в зоне B без пропуска">
+</div>
+<div class="sum" id="sum1"></div>
+</div>
 
-<label>Категория работника</label>
-<select id="cat">
-<option value="foreign">Иностранный персонал</option>
-<option value="local">Местный работник (АРЕ)</option>
-</select>
-
-<h2>Работник</h2>
-<label>ФИО полностью: Журавлев Владимир Александрович</label>
-<input id="fioFull">
-<label>Фамилия И.О. (именительный): Журавлев В.А.</label>
+<!-- ШАГ 2 -->
+<div class="step" id="s2">
+<h2>2. Кто нарушил?</h2>
+<label>Это работник</label>
+<div class="pick" data-f="cat"><button data-v="foreign">Иностранный (из России и др.)</button><button data-v="local">Местный (египтянин и др.)</button></div>
+<label>Пол</label>
+<div class="pick" data-f="sex"><button data-v="m">Мужчина</button><button data-v="f">Женщина</button></div>
+<label>Фамилия Имя Отчество полностью</label>
+<input id="fioFull" placeholder="Иванов Иван Иванович">
+<small class="h">Поля ниже заполнятся сами. Проверьте и при ошибке исправьте.</small>
+<label>Коротко (кто): Иванов И.И.</label>
 <input id="fioN">
-<label>Фамилия И.О. (родительный): Журавлева В.А.</label>
+<label>Коротко (кого / чего): Иванова И.И.</label>
 <input id="fioG">
-<label>Должность, разряд, подразделение</label>
+<label>Полностью (кого): Иванова Ивана Ивановича</label>
+<input id="fioA">
+<label>Должность, разряд, участок</label>
 <input id="pos" placeholder="монтажник 5 разряда монтажного участка № 6">
-<div class="row">
-<div><label>Дата рождения</label><input id="dob" type="date"></div>
+<div class="two">
 <div><label>Табельный номер</label><input id="tab" inputmode="numeric"></div>
+<div><label>Дата рождения</label><input id="dob" type="date"></div>
 </div>
 <label>Гражданство</label>
-<input id="cit" list="cits">
-<datalist id="cits">
-<option value="гражданин Российской Федерац
+<select id="cit">
+<option value="">— выберите —</option>
+<option value="Российской Федерации">Россия</option>
+<option value="Республики Беларусь">Беларусь</option>
+<option value="Республики Казахстан">Казахстан</option>
+<option value="Республики Узбекистан">Узбекистан</option>
+<option value="Киргизской Республики">Киргизия</option>
+<option value="Республики Таджикистан">Таджикистан</option>
+<option value="Арабской Республики Египет">Египет</option>
+<option value="*">Другое (вписать)</option>
+</select>
+<input id="citOther" placeholder="страна в форме «гражданин …»: Республики Армения" style="display:none;margin-top:6px">
+</div>
+
+<!-- ШАГ 3 -->
+<div class="step" id="s3">
+<h2>3. Где и когда?</h2>
+<div class="two">
+<div><label>Дата</label><input id="date" type="date"></div>
+<div><label>Время</label><input id="time" type="time"></div>
+</div>
+<label>Место</label>
+<div class="chips" id="placeChips"></div>
+<input id="place" placeholder="на территории Площадки сооружения АЭС «Эль-Дабаа»">
+<small class="h">Начинайте со слов «на…» или «в…». Нажмите кнопку выше и допишите.</small>
+<label>Что произошло подробнее (необязательно)</label>
+<textarea id="fact" placeholder="Коротко: что видели, кто был рядом, что сделали"></textarea>
+<div id="medBox">
+<label>Проверяли алкотестером?</label>
+<div class="pick" data-f="medQ"><button data-v="yes">Да</button><button data-v="no">Нет</button></div>
+<div id="medData" class="two">
+<div><label>Показания, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
+<div><label>№ акта</label><input id="act"></div>
+</div>
+</div>
+<label>Объяснительная от нарушителя</label>
+<div class="pick" data-f="expl"><button data-v="yes">Взяли</button><button data-v="no">Не брали</button><button data-v="ref">Отказался писать</button></div>
+<div id="explL"><label>Сколько листов</label><input id="explPages" inputmode="numeric"></div>
+</div>
+
+<!-- ШАГ 4 -->
+<div class="step" id="s4">
+<h2>4. Кто выявил?</h2>
+<label>Ваша должность и Фамилия И.О.</label>
+<input id="who" placeholder="распределитель работ монтажного участка № 6 Петров П.П.">
+<label>Пол</label>
+<div class="pick" data-f="wsex"><button data-v="m">Мужчина</button><button data-v="f">Женщина</button></div>
+<label>Ваш телефон</label>
+<input id="wtel" inputmode="tel">
+<label>Где нарушитель находится сейчас</label>
+<input id="now" placeholder="у себя в комнате, корпус 3, комн. 12">
+</div>
+
+<!-- ШАГ 5 -->
+<div class="step" id="s5">
+<h2>5. Какое наказание предложить?</h2>
+<div class="pick" data-f="mode"><button data-v="sb">Решит блок безопасности</button><button data-v="set">Выбрать самому</button></div>
+<div id="mSet">
+<div id="mForeign">
+<label>Взыскание</label>
+<select id="disc">
+<option value="">— без взыскания —</option>
+<option value="замечания">Замечание</option>
+<option value="выговора">Выговор</option>
+<option value="увольнения по соответствующим основаниям">Увольнение</option>
+</select>
+<div class="item"><input type="checkbox" id="opOn"><span>Снизить оперативную премию</span></div>
+<label>на сколько, %</label><input id="opPct" inputmode="numeric" placeholder="100">
+<div class="item"><input type="checkbox" id="isn"><span>Снизить ИСН</span></div>
+<div class="item"><input type="checkbox" id="kpe"><span>Снизить (не выплатить) годовую премию по КПЭ</span></div>
+</div>
+<div id="mLocal">
+<label>Взыскание для местного работника</label>
+<select id="locm">
+<option value="">— выберите —</option>
+<option value="письменного предупреждения">Письменное предупреждение</option>
+<option value="удержания из заработной платы в размере 150 EGP">Штраф 150 EGP (нет отметки FACE ID)</option>
+<option value="удержания из заработной платы в размере 175 EGP">Штраф 175 EGP (первое нарушение)</option>
+<option value="удержания из заработной платы в размере 200 EGP">Штраф 200 EGP (второе нарушение)</option>
+<option value="удержания из заработной платы в размере 250 EGP">Штраф 250 EGP (третье нарушение)</option>
+<option value="увольнения в соответствии с Законом о труде">Увольнение (через трудовой суд)</option>
+</select>
+</div>
+<div class="item"><input type="checkbox" id="gross"><span>Это грубое нарушение</span></div>
+</div>
+</div>
+
+<!-- ШАГ 6 -->
+<div class="step" id="s6">
+<h2>6. Проверьте и отправьте</h2>
+<pre id="out"></pre>
+<label>Кому отправить</label>
+<div class="mail"><input id="mailTo" placeholder="имя" autocapitalize="off" autocorrect="off"><span>@trest-rossem.ru</span></div>
+<button onclick="sendMail()">Отправить на почту</button>
+<button class="alt" onclick="copyTxt()">Скопировать текст</button>
+<details style="margin-top:14px"><summary style="font-size:14px;color:#555">Для блока безопасности</summary>
+<label>Другие приложения (каждое с новой строки: название ; листов)</label>
+<textarea id="att"></textarea>
+<label>Дополнительные пункты ПП Эль-Дабаа.007-2019 (через запятую)</label><input id="ppAdd">
+<label>Дополнительные пункты ПВТР (через запятую)</label><input id="pvAdd">
+<label>Иные документы (полная ссылка, каждая с новой строки)</label><textarea id="lnaAdd"></textarea>
+<div class="two"><div><label>Дата СЗ</label><input id="szdate" type="date"></div><div><label>Номер</label><input id="num" placeholder="[XXX]"></div></div>
+<label>Подписант (должность ; И.О. Фамилия)</label>
+<input id="sign" value="Заместитель директора филиала по безопасности ; О.П. Сай">
+<button class="alt" onclick="make()">Обновить текст</button>
+</details>
+<button class="alt" onclick="clearAll()">Новая записка (очистить всё)</button>
+</div>
+
+<div class="nav"><button class="alt" id="bBack" onclick="go(-1)">Назад</button><button id="bNext" onclick="go(1)">Далее</button></div>
+
+<script>
+/* ===== РЕКВИЗИТЫ (менять только здесь) ===== */
+const DOMAIN="@trest-rossem.ru";
+const R={
+ filial:"Филиала ООО «Трест РосСЭМ», Египет, г. Каир",
+ pp:"Правил поведения персонала Подрядчика, его субподрядных организаций и командируемых лиц при нахождении в Египте в рамках реализации проекта по сооружению АЭС «Эль-Дабаа», а также членов их семей и посетителей (ПП Эль-Дабаа.007-2019), утверждённых приказом № 334-09/8-П от 08.04.2022",
+ pvtr:"Правил внутреннего трудового распорядка работников ООО «Трест РосСЭМ» в филиале в Арабской Республике Египет (РосСЭМ Пвтр-02-09-02-2025), утверждённых приказом № 334/01/1/579-П от 05.11.2025",
+ med:"распоряжения Филиала ООО «Трест РосСЭМ» в АРЕ № 334-09/37-р от 08.08.2023 года"
+};
+const U="[уточнить]";
+const PLACES=["на территории Площадки сооружения АЭС «Эль-Дабаа»","на территории жилого посёлка ","на КПП № ","в служебном автобусе ","в общественном месте "];
+/* ===== ГРУППЫ И ВИДЫ НАРУШЕНИЙ =====
+ n — как видит работник; t — текст в СЗ [он, она];
+ pp — пункты ПП 007; pv — ПВТР для всех; pf — только иностранным; pl — только местным;
+ h — что именно сказано в пункте (подсказка); med — спросить про алкотестер */
+const G=[
+ {id:"alc",n:"🍺 Алкоголь, наркотики"},
+ {id:"fgt",n:"👊 Драка, ругань, конфликт"},
+ {id:"tim",n:"⏰ Опоздал, ушёл, не вышел"},
+ {id:"trp",n:"🚗 Поездки, гости, транспорт"},
+ {id:"pas",n:"🪪 Пропуск, КПП, телефон, фото"},
+ {id:"ord",n:"🚬 Порядок и поведение"},
+ {id:"oth",n:"✏️ Другое"}
+];
+const V=[
+ {g:"alc",id:"alcoW",n:"Пьяный на площадке или на работе",t:["находился в рабочее время с внешними признаками алкогольного опьянения","находилась в рабочее время с внешними признаками алкогольного опьянения"],pp:["8.1.9"],pv:["8.3"],pf:["13.1.7"],pl:["13.2.12"],med:1,h:"ПП 8.1.9 — нахождение на Площадке в опьянении; ПВТР 8.3 — запрет находиться на территории Работодателя в опьянении; 13.1.7 — грубый проступок (иностр.); 13.2.12 — основание увольнения (местн.)"},
+ {g:"alc",id:"alco",n:"Пьяный в посёлке, на улице, в магазине",t:["находился с внешними признаками алкогольного опьянения","находилась с внешними признаками алкогольного опьянения"],pp:["8.1.9"],pv:[],pf:["19.5"],pl:[],med:1,h:"ПП 8.1.9 — запрет появляться в опьянении в общественных местах и в Жилпоселке; ПВТР 19.5 — то же (иностр.)"},
+ {g:"alc",id:"drink",n:"Распивал спиртное на территории работодателя",t:["распивал алкогольные напитки на территории Работодателя","распивала алкогольные напитки на территории Работодателя"],pp:[],pv:["8.3"],pf:[],pl:[],med:1,h:"ПВТР 8.3 — запрет распивать алкогольные напитки"},
+ {g:"alc",id:"bring",n:"Пронёс спиртное на площадку",t:["пронёс алкогольные напитки на площадку строительства АЭС","пронесла алкогольные напитки на площадку строительства АЭС"],pp:[],pv:["15.9"],pf:[],pl:[],h:"ПВТР 15.9 — запрет проносить на площадку алкогольные напитки"},
+ {g:"alc",id:"buy",n:"Купил спиртное у местных жителей",t:["приобрёл спиртные напитки у местных жителей","приобрела спиртные напитки у местных жителей"],pp:["8.1.9"],pv:[],pf:[],pl:[],h:"ПП 8.1.9 — запрет приобретать спиртное у местных жителей"},
+ {g:"alc",id:"drug",n:"Признаки наркотиков",t:["находился с внешними признаками наркотического (токсического) опьянения","находилась с внешними признаками наркотического (токсического) опьянения"],pp:["8.1.10"],pv:["8.3"],pf:["19.5"],pl:[],h:"ПП 8.1.10 — незаконный оборот наркотиков; ПВТР 8.3 — запрет употреблять наркотические вещества; 19.5 (иностр.)"},
+ {g:"fgt",id:"fight",n:"Драка, ударил человека",t:["допустил агрессивные действия и рукоприкладство","допустила агрессивные действия и рукоприкладство"],pp:["9.2.1"],pv:["8.2"],pf:[],pl:["13.2.12"],h:"ПП 9.2.1 — запрет агрессивных действий и рукоприкладства; ПВТР 8.2 — способствовать благоприятному климату в коллективе; 13.2.12 — агрессивное поведение (местн.)"},
+ {g:"fgt",id:"rude",n:"Грубил, кричал, ругался матом",t:["допускал грубость, крик и нецензурные выражения при общении","допускала грубость, крик и нецензурные выражения при общении"],pp:["9.2.1"],pv:["8.2"],pf:[],pl:[],h:"ПП 9.2.1 — запрет грубости, крика, нецензурных выражений; ПВТР 8.2 — соблюдать правила делового этикета"},
+ {g:"fgt",id:"locals",n:"Конфликт или оскорбление местных жителей",t:["допустил недружественные проявления в отношении местных жителей","допустила недружественные проявления в отношении местных жителей"],pp:["8.1.1"],pv:[],pf:["19.2","19.3"],pl:[],h:"ПП 8.1.1 — такт и выдержка с местными жителями; ПВТР 19.2, 19.3 — уважение к обычаям, запрет провокационных действий (иностр.)"},
+ {g:"fgt",id:"order",n:"Не выполнил указание руководителя",t:["не выполнил распоряжение непосредственного руководителя","не выполнила распоряжение непосредственного руководителя"],pp:[],pv:["8.2"],pf:[],pl:[],h:"ПВТР 8.2 — исполнять распоряжения и указания руководителя"},
+ {g:"tim",id:"late",n:"Опоздал на работу",t:["опоздал на работу без уважительных причин","опоздала на работу без уважительных причин"],pp:[],pv:["10.30"],pf:[],pl:[],h:"ПВТР 10.30 — опоздание"},
+ {g:"tim",id:"early",n:"Ушёл с работы раньше времени",t:["оставил рабочее место до окончания рабочего дня (смены) без уважительных причин","оставила рабочее место до окончания рабочего дня (смены) без уважительных причин"],pp:[],pv:["10.30"],pf:[],pl:[],h:"ПВТР 10.30 — ранний уход с работы"},
+ {g:"tim",id:"absent",n:"Не вышел на работу (прогул)",t:["отсутствовал на рабочем месте без уважительных причин в течение всего рабочего дня (смены)","отсутствовала на рабочем месте без уважительных причин в течение всего рабочего дня (смены)"],pp:[],pv:["10.30"],pf:["13.1.6"],pl:[],h:"ПВТР 10.30 — прогул; 13.1.6 — понятие прогула"},
+ {g:"tim",id:"nowarn",n:"Не предупредил, что не выйдет",t:["не сообщил заблаговременно непосредственному руководителю о причинах невыхода на работу","не сообщила заблаговременно непосредственному руководителю о причинах невыхода на работу"],pp:[],pv:["8.2"],pf:[],pl:[],h:"ПВТР 8.2 — заблаговременно сообщать руководителю о невыходе"},
+ {g:"tim",id:"face",n:"Не отметился на FACE ID",t:["не произвёл регистрацию в ЭСУРВ перед началом (окончанием) рабочего дня (смены)","не произвела регистрацию в ЭСУРВ перед началом (окончанием) рабочего дня (смены)"],pp:[],pv:["10.30"],pf:[],pl:[],h:"ПВТР 10.30 — отсутствие регистрации в ЭСУРВ"},
+ {g:"tim",id:"personal",n:"Занимался личными делами в рабочее время",t:["использовал рабочее время в личных целях","использовала рабочее время в личных целях"],pp:[],pv:["8.3"],pf:[],pl:[],h:"ПВТР 8.3 — запрет использовать рабочее время в личных целях"},
+ {g:"trp",id:"exit",n:"Уехал из посёлка без разрешения",t:["выехал за пределы места проживания без предварительного согласования с блоком безопасности Филиала","выехала за пределы места проживания без предварительного согласования с блоком безопасности Филиала"],pp:["7.7"],pv:[],pf:[],pl:[],h:"ПП 7.7 — выезд по согласованию с Отделом безопасности не менее чем за сутки"},
+ {g:"trp",id:"group",n:"Групповая поездка без согласования",t:["принял участие в групповой поездке, не согласованной с заместителем директора филиала по безопасности","приняла участие в групповой поездке, не согласованной с заместителем директора филиала по безопасности"],pp:[U],pv:[],pf:[],pl:[],h:"ПП 007, раздел 7 — абзац без номера, пункт [уточнить]"},
+ {g:"trp",id:"guest",n:"Привёл гостей без согласования",t:["осуществил приём личных гостей без согласования с блоком безопасности Филиала","осуществила приём личных гостей без согласования с блоком безопасности Филиала"],pp:[U],pv:[],pf:[],pl:[],h:"ПП 007, раздел 7 — абзац без номера, пункт [уточнить]"},
+ {g:"trp",id:"drive",n:"Сам сел за руль",t:["самостоятельно управлял автотранспортным средством","самостоятельно управляла автотранспортным средством"],pp:[],pv:[],pf:["19.8"],pl:[],h:"ПВТР 19.8 — запрет самостоятельного управления автотранспортом (иностр.)"},
+ {g:"pas",id:"pass",n:"Отдал свой пропуск другому",t:["передал свой пропуск другому лицу","передала свой пропуск другому лицу"],pp:[],pv:["15.14"],pf:["13.1.5"],pl:[],h:"ПВТР 15.14 — запрет передавать пропуск; 13.1.5 — нарушение режима = нарушение дисциплины (иностр.)"},
+ {g:"pas",id:"reg",n:"Не подчинился дежурному КПП / нарушил режим",t:["не выполнил требования пропускного и внутриобъектового режима","не выполнила требования пропускного и внутриобъектового режима"],pp:[],pv:["8.2","15.13"],pf:["13.1.5"],pl:[],h:"ПВТР 8.2 — соблюдать пропускной режим; 15.13 — выполнять требования режима и обоснованные требования лиц на посту"},
+ {g:"pas",id:"dev",n:"Пронёс ноутбук, флешку, фотоаппарат",t:["осуществил внос технических средств в зону, где это запрещено","осуществила внос технических средств в зону, где это запрещено"],pp:["7.13"],pv:["15.11"],pf:[],pl:[],h:"ПП 7.13; ПВТР 15.11 — запрет вноса носителей информации, фотоаппаратов, ноутбуков без разрешения"},
+ {g:"pas",id:"photo",n:"Фотографировал, где нельзя",t:["осуществил фотографирование в месте, где фотосъёмка запрещена","осуществила фотографирование в месте, где фотосъёмка запрещена"],pp:["8.1.4"],pv:["15.12"],pf:["19.10"],pl:[],h:"ПП 8.1.4; ПВТР 15.12 — съёмка на площадке по письменному разрешению; 19.10 — запрет фотографировать полицию, военных и военные объекты (иностр.)"},
+ {g:"ord",id:"smoke",n:"Курил в неположенном месте",t:["курил вне специально отведённого места","курила вне специально отведённого места"],pp:["7.12"],pv:["8.3"],pf:[],pl:[],h:"ПП 7.12; ПВТР 8.3 — запрет курить вне отведённых мест"},
+ {g:"ord",id:"noise",n:"Шумел ночью (22:00–8:00)",t:["нарушил режим тишины в ночное время","нарушила режим тишины в ночное время"],pp:["7.12"],pv:[],pf:[],pl:[],h:"ПП 7.12 — режим тишины с 22:00 до 8:00"},
+ {g:"ord",id:"dress",n:"Шорты, голый торс, неподобающая одежда",t:["нарушил требования к внешнему виду","нарушила требования к внешнему виду"],pp:["9.3"],pv:[],pf:["19.4"],pl:[],h:"ПП 9.3 — внешний вид; ПВТР 19.4 — требования к одежде (иностр.)"},
+ {g:"ord",id:"info",n:"Обсуждал работу при посторонних",t:["вёл разговоры на служебные темы в общественном месте","вела разговоры на служебные темы в общественном месте"],pp:["8.1.25"],pv:["8.2"],pf:[],pl:[],h:"ПП 8.1.25 — запрет служебных разговоров в общественных местах; ПВТР 8.2 — неразглашение охраняемой информации"},
+ {g:"ord",id:"prop",n:"Сломал или испортил имущество",t:["допустил порчу имущества Работодателя","допустила порчу имущества Работодателя"],pp:[],pv:["8.2"],pf:[],pl:[],h:"ПВТР 8.2 — бережно относиться к имуществу Работодателя"},
+ {g:"oth",id:"other",n:"Другое (описать)",t:["",""],pp:[],pv:[],pf:[],pl:[],h:"пункты укажет блок безопасности"}
+];
+/* ================================================= */
+const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const $=id=>document.getElementById(id);
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","explPages","who","wtel","now","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
+const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",wsex:"m",mode:"sb"};
+let step=1,openG="",manual={};
+const N=6;
+function val(id){const e=$(id);return e.type=="checkbox"?e.checked:e.value}
+function setv(id,x){const e=$(id);if(e.type=="checkbox")e.checked=!!x;else e.value=x}
+function v(id,def){const x=$(id).value.trim().replace(/[;,]+$/,"");return x||def||U}
+function end(s){return /\.$/.test(s)?s:s+"."}
+function d(x){if(!x)return U;const p=x.split("-");return p[2]+"."+p[1]+"."+p[0]}
+function dw(x){if(!x)return U;const p=x.split("-");return (+p[2])+" "+MON[+p[1]-1]+" "+p[0]+" года"}
+function pl(n,a,b,c){const m=n%100,k=n%10;if(m>10&&m<15)return c;if(k==1)return a;if(k>1&&k<5)return b;return c}
+function tw(x){if(!x)return"";const p=x.split(":"),h=+p[0],m=+p[1];return " в "+h+" "+pl(h,"час","часа","часов")+" "+p[1]+" "+pl(m,"минуту","минуты","минут")}
+function cmp(a,b){if(a==U)return 1;if(b==U)return -1;const x=a.split("."),y=b.split(".");for(let i=0;i<Math.max(x.length,y.length);i++){const p=+(x[i]||0),q=+(y[i]||0);if(p!=q)return p-q}return 0}
+function jn(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" и "+a[a.length-1]}
+function uniq(arr){return [...new Set(arr.map(s=>s.trim()).filter(s=>s))].sort(cmp)}
+function split(s){return s.split(",").map(x=>x.trim()).filter(x=>x)}
+function today(){const t=new Date();return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")}
+function chosen(){return V.filter(x=>$("v_"+x.id).checked)}
+/* ---- склонение русских ФИО (родительный = винительный для мужчин) ---- */
+const HUSH=/[гкхжшщч]$/;
+function dSur(s,f,c){const l=s.toLowerCase();
+ if(f){if(/(ова|ева|ёва|ина|ына)$/.test(l))return s.slice(0,-1)+(c=="a"?"у":"ой");
+  if(/(ская|цкая)$/.test(l))return s.slice(0,-2)+(c=="a"?"ую":"ой");return s}
+ if(/(ский|цкий)$/.test(l))return s.slice(0,-2)+"ого";
+ if(/(ой|ый|ий)$/.test(l))return s.slice(0,-2)+"ого";
+ if(/[бвгджзклмнпрстфхцчшщ]$/.test(l))return s+"а";
+ if(/[йь]$/.test(l))return s.slice(0,-1)+"я";
+ if(/а$/.test(l)&&!/[уоеиюэ]а$/.test(l))return s.slice(0,-1)+(c=="a"?"у":(HUSH.test(l.slice(0,-1))?"и":"ы"));
+ return s}
+function dName(s,f,c){const l=s.toLowerCase();
+ if(/ия$/.test(l))return s.slice(0,-1)+(c=="a"?"ю":"и");
+ if(/а$/.test(l))return s.slice(0,-1)+(c=="a"?"у":(HUSH.test(l.slice(0,-1))?"и":"ы"));
+ if(/я$/.test(l))return s.slice(0,-1)+(c=="a"?"ю":"и");
+ if(f)return s;
+ if(/[йь]$/.test(l))return s.slice(0,-1)+"я";
+ if(/[бвгджзклмнпрстфхцчшщ]$/.test(l))return s+"а";
+ return s}
+function dPat(s,f,c){const l=s.toLowerCase();
+ if(/ич$/.test(l))return s+"а";
+ if(/на$/.test(l))return s.slice(0,-1)+(c=="a"?"у":"ы");return s}
+function ini(w){return w.map(x=>x.charAt(0).toUpperCase()+".").join("")}
+function autoFio(){
+ const w=$("fioFull").value.trim().split(/\s+/).filter(x=>x);if(!w.length)return;
+ const f=P.sex=="f",loc=P.cat=="local";
+ const short=w.length>1?w[0]+" "+ini(w.slice(1,3)):w[0];
+ let g=short,a=w.join(" ");
+ if(!loc&&w.length==3){
+  g=dSur(w[0],f,"g")+" "+ini(w.slice(1));
+  a=dSur(w[0],f,"a")+" "+dName(w[1],f,"a")+" "+dPat(w[2],f,"a");
+ }
+ if(!manual.fioN)$("fioN").value=short;
+ if(!manual.fioG)$("fioG").value=g;
+ if(!manual.fioA)$("fioA").value=a;
+}
+/* ---- интерфейс ---- */
+function build(){
+ $("groups").innerHTML=G.map(g=>"<button class='grp' id='g_"+g.id+"' onclick=\"tg('"+g.id+"')\">"+g.n+" <span id='c_"+g.id+"'></span></button><div class='items' id='i_"+g.id+"' style='display:none'>"+
+  V.filter(x=>x.g==g.id).map(x=>"<label class='item'><input type='checkbox' id='v_"+x.id+"'><span>"+x.n+"<small class='h'>"+x.h+"</small></span></label>").join("")+"</div>").join("");
+ V.forEach(x=>$("v_"+x.id).addEventListener("change",()=>{refresh();save()}));
+ $("placeChips").innerHTML=PLACES.map((p,i)=>"<button onclick='pc("+i+")'>"+p.replace(/ $/,"…")+"</button>").join("");
+ document.querySelectorAll(".pick").forEach(box=>box.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{P[box.dataset.f]=b.dataset.v;if(box.dataset.f=="sex"||box.dataset.f=="cat")autoFio();refresh();save()})));
+}
+function tg(id){openG=openG==id?"":id;refresh()}
+function pc(i){$("place").value=PLACES[i];$("place").focus();save()}
+function refresh(){
+ G.forEach(g=>{const n=V.filter(x=>x.g==g.id&&$("v_"+x.id).checked).length;
+  $("c_"+g.id).textContent=n?"("+n+")":"";$("g_"+g.id).classList.toggle("on",n>0||openG==g.id);
+  $("i_"+g.id).style.display=openG==g.id?"":"none"});
+ const c=chosen(),loc=P.cat=="local";
+ $("sum1").innerHTML=c.length?"<b>Отмечено:</b> "+c.map(x=>x.n).join("; "):"Пока ничего не отмечено";
+ $("otherBox").style.display=c.some(x=>x.id=="other")?"":"none";
+ $("medBox").style.display=c.some(x=>x.med)?"":"none";
+ $("medData").style.display=P.medQ=="yes"?"":"none";
+ $("explL").style.display=P.expl=="yes"?"":"none";
+ $("mSet").style.display=P.mode=="set"?"":"none";
+ $("mForeign").style.display=loc?"none":"";$("mLocal").style.display=loc?"":"none";
+ $("citOther").style.display=$("cit").value=="*"?"":"none";
+ document.querySelectorAll(".pick").forEach(box=>box.querySelectorAll("button").forEach(b=>b.classList.toggle("on",P[box.dataset.f]==b.dataset.v)));
+ document.querySelectorAll(".step").forEach((s,i)=>s.classList.toggle("on",i+1==step));
+ $("prog").textContent="Шаг "+step+" из "+N;
+ $("bBack").style.visibility=step>1?"visible":"hidden";
+ $("bNext").style.display=step<N?"":"none";
+}
+function go(k){
+ if(k>0){
+  if(step==1&&!chosen().length){alert("Отметьте, что случилось");return}
+  if(step==1&&chosen().some(x=>x.id=="other")&&!$("otherText").value.trim()){alert("Опишите нарушение");return}
+  if(step==2&&!$("fioFull").value.trim()){alert("Впишите ФИО нарушителя");return}
+  if(step==4&&!$("who").value.trim()){alert("Укажите, кто выявил");return}
+  if(step==5&&P.mode=="set"&&!measure()){alert("Выберите взыскание или нажмите «Решит блок безопасности»");return}
+ }
+ step=Math.min(N,Math.max(1,step+k));if(step==N)make();refresh();save();window.scrollTo(0,0)
+}
+function save(){const o={P:P,manual:manual,v:chosen().map(x=>x.id)};F.forEach(f=>o[f]=val(f));localStorage.setItem("sz3",JSON.stringify(o))}
+function load(){let o={};try{o=JSON.parse(localStorage.getItem("sz3")||"{}")}catch(e){}
+ F.forEach(f=>{if(o[f]!==undefined)setv(f,o[f])});Object.assign(P,o.P||{});manual=o.manual||{};
+ (o.v||[]).forEach(id=>{const e=$("v_"+id);if(e)e.checked=true});
+ if(!$("date").value)$("date").value=today();if(!$("szdate").value)$("szdate").value=today()}
+function measure(){
+ if(P.cat=="local"){const m=$("locm").value;return m?{d:m,ext:[]}:null}
+ const ex=[];
+ if($("opOn").checked)ex.push("снижени_ оперативной премии на "+($("opPct").value.trim()||"[__]")+"%");
+ if($("isn").checked)ex.push("снижени_ ИСН");
+ if($("kpe").checked)ex.push("снижени_ (невыплат~) годовой премии по КПЭ");
+ const disc=$("disc").value;
+ if(!disc&&!ex.length)return null;
+ return {d:disc,ext:ex};
+}
+function citizen(){const c=$("cit").value;if(c=="*")return v("citOther");return c||U}
+/* ---- текст СЗ ---- */
+function make(){
+ const c=chosen(),loc=P.cat=="local",f=P.sex=="f"?1:0;
+ const n=v("fioN"),g=v("fioG"),a=v("fioA"),tab=v("tab");
+ const wk=loc?"локальный работник ":"работник ";
+ const person=wk+R.filial+" (далее – Филиал) "+v("pos")+" "+v("fioFull")+" ("+d($("dob").value)+" года рождения, "+(f?"гражданка ":"гражданин ")+citizen()+", таб. № "+tab+")";
+ const acts=c.map(x=>x.id=="other"?v("otherText"):x.t[f]);
+ let b="Настоящим сообщаю, что "+dw($("date").value)+tw($("time").value)+" "+v("place").replace(/\.$/,"")+" "+person+" "+end(jn(acts).replace(/\.$/,""));
+ b+=" "+(c.length>1?"Указанные факты выявил":"Указанный факт выявил")+(P.wsex=="f"?"а ":" ")+end(v("who"));
+ const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
+ if(c.some(x=>x.med)&&P.medQ=="yes"){
+  b+="\n\nС согласия работника "+g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+v("mg")+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+v("act")+" от "+dw($("date").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";
+ }
+ if(P.expl=="yes")b+="\n\nВ рамках проверки от "+g+" истребовано письменное объяснение.";
+ if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась.":" отказался.");
+ let pp=[],pv=[];
+ c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
+ pp=uniq(pp.concat(split($("ppAdd").value)));pv=uniq(pv.concat(split($("pvAdd").value)));
+ const refs=[];
+ if(pp.length)refs.push("п. "+pp.join(", ")+" "+R.pp);
+ if(pv.length)refs.push("п. "+pv.join(", ")+" "+R.pvtr);
+ $("lnaAdd").value.split("\n").map(s=>s.trim().replace(/[;.]$/,"")).filter(s=>s).forEach(s=>refs.push(s));
+ if(!refs.length)refs.push(U);
+ b+="\n\nТаким образом, "+wk+n+(f?" допустила":" допустил")+" нарушения:\n"+refs.join(";\n")+".";
+ const reason=$("gross").checked&&P.mode=="set"?"за грубое нарушение трудовой дисциплины":"за нарушение трудовой дисциплины";
+ const who2=(loc?"локального работника ":"")+a+", таб. № "+tab+",";
+ const mm=P.mode=="set"?measure():null;
+ let prop;
+ if(!mm)prop="привлечь "+who2+" к дисциплинарной ответственности в виде "+U;
+ else if(mm.d){prop="привлечь "+who2+" к дисциплинарной ответственности в виде "+mm.d;
+  if(mm.ext.length)prop+=" со "+jn(mm.ext.map(s=>s.replace(/_/g,"ем").replace(/~/g,"ой")))}
+ else prop="применить в отношении "+g+", таб. № "+tab+", меры воздействия в виде "+jn(mm.ext.map(s=>s.replace(/_/g,"я").replace(/~/g,"ы")));
+ b+="\n\nВ связи с вышеизложенным, предлагаю "+reason+" "+prop+".";
+ const lines=[];
+ if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
+ $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
+ const one=s=>{const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
+ let att="";
+ if(lines.length==1)att="\n\nПриложение: "+one(lines[0]);
+ else if(lines.length>1)att="\n\nПриложения:\n"+lines.map((s,i)=>(i+1)+". "+one(s)).join(";\n")+".";
+ const sg=v("sign").split(";");
+ const txt="Филиал ООО «Трест РосСЭМ»,\nЕгипет, г. Каир\n\nБлок безопасности\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+d($("szdate").value)+" г. № 334-09/02/01-06/"+v("num","[XXX]")+"-СЗ\n\nВ отношении "+g+
+  "\n\n\t\t\tДиректору филиала\n\t\t\tГампе А.В.\n\nУважаемый Андрей Владимирович!\n\n"+b+"\n\nНа Ваше решение."+att+
+  "\n\n"+sg[0].trim()+"\t\t"+(sg[1]||"").trim()+"\n\nСайдалиев Вячеслав Фархадович\n01026297546";
+ $("out").textContent=txt;save();return txt;
+}
+function letter(){
+ const t=make();
+ return "Сообщение о нарушении\n\nВыявил"+(P.wsex=="f"?"а":"")+": "+v("who")+"\nТелефон: "+v("wtel","не указан")+"\nГде нарушитель сейчас: "+v("now","не указано")+"\n\nПроект служебной записки:\n\n"+t;
+}
+function sendMail(){
+ const name=$("mailTo").value.trim().replace(/@.*$/,"");
+ if(!name){alert("Впишите, кому отправить (часть адреса до @)");return}
+ const to=name+DOMAIN,subj="СЗ в отношении "+v("fioG")+" от "+d($("date").value),body=letter();save();
+ if(window.Android&&Android.email)Android.email(to,subj,body);
+ else if(window.Android)Android.share(subj+"\n\n"+body);
+ else location.href="mailto:"+to+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+}
+function copyTxt(){const t=make();if(window.Android)Android.share(t);else if(navigator.clipboard)navigator.clipboard.writeText(t)}
+function clearAll(){if(!confirm("Начать новую записку? Всё введённое будет удалено."))return;
+ const keep={mailTo:$("mailTo").value,who:$("who").value,wtel:$("wtel").value,sign:$("sign").value,wsex:P.wsex};
+ F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
+ Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",wsex:keep.wsex});manual={};
+ ["mailTo","who","wtel","sign"].forEach(k=>setv(k,keep[k]));
+ $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
+build();
+F.forEach(f=>{$(f).addEventListener("change",()=>{refresh();save()});$(f).addEventListener("input",save)});
+["fioN","fioG","fioA"].forEach(f=>$(f).addEventListener("input",()=>{manual[f]=!!$(f).value.trim();save()}));
+$("fioFull").addEventListener("input",autoFio);
+load();refresh();
+</script>
+</body>
+</html>
