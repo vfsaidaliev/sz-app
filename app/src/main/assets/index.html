@@ -7,7 +7,10 @@
 <style>
 body{font-family:sans-serif;margin:0;padding:12px;background:#f2f4f7;color:#111}
 h1{font-size:20px;margin:4px 0 12px}
+h2{font-size:15px;margin:18px 0 4px;color:#1f5fbf}
 label{display:block;font-size:13px;color:#555;margin:10px 0 3px}
+label.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:#111}
+label.chk input{width:auto}
 input,select,textarea{width:100%;box-sizing:border-box;padding:9px;font-size:15px;border:1px solid #ccc;border-radius:8px;background:#fff}
 textarea{min-height:80px}
 button{width:100%;padding:12px;font-size:16px;margin-top:10px;border:0;border-radius:8px;background:#1f5fbf;color:#fff}
@@ -33,80 +36,20 @@ pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:8px
 <option value="local">Местный работник (АРЕ)</option>
 </select>
 
-<label>ФИО (именительный): Журавлев В.А.</label>
+<h2>Работник</h2>
+<label>ФИО полностью: Журавлев Владимир Александрович</label>
+<input id="fioFull">
+<label>Фамилия И.О. (именительный): Журавлев В.А.</label>
 <input id="fioN">
-<label>ФИО (родительный): Журавлева В.А.</label>
+<label>Фамилия И.О. (родительный): Журавлева В.А.</label>
 <input id="fioG">
-<label>Должность и подразделение</label>
-<input id="pos" placeholder="монтажник монтажного участка № 6">
-
+<label>Должность, разряд, подразделение</label>
+<input id="pos" placeholder="монтажник 5 разряда монтажного участка № 6">
 <div class="row">
-<div><label>Дата нарушения</label><input id="date" type="date"></div>
-<div><label>Время</label><input id="time" type="time"></div>
+<div><label>Дата рождения</label><input id="dob" type="date"></div>
+<div><label>Табельный номер</label><input id="tab" inputmode="numeric"></div>
 </div>
-<label>Место</label>
-<input id="place" placeholder="строительная площадка АЭС «Эль-Дабаа»">
-<label>Кем выявлено</label>
-<input id="who" placeholder="дежурным по КПП ...">
-<label>Обстоятельства (своими словами)</label>
-<textarea id="fact"></textarea>
-<label>Пункт ПВТР (если не уверен, оставь пустым)</label>
-<input id="pvtr">
-
-<label>Предлагаемая мера</label>
-<input id="measure" list="measures">
-<datalist id="measures"></datalist>
-
-<label>Приложения (каждое с новой строки: название ; листов)</label>
-<textarea id="att" placeholder="Объяснительная Журавлева В.А. ; 1"></textarea>
-
-<div class="row">
-<div><label>Дата СЗ</label><input id="szdate" type="date"></div>
-<div><label>Номер (XXX)</label><input id="num" placeholder="[XXX]"></div>
-</div>
-<label>Подписант</label>
-<input id="sign" value="Заместитель директора филиала по безопасности ; Сай О.П.">
-
-<button onclick="make()">Сформировать СЗ</button>
-<pre id="out"></pre>
-<button onclick="share()">Отправить / скопировать</button>
-<button class="alt" onclick="clearAll()">Очистить форму</button>
-
-<script>
-const F=["type","cat","fioN","fioG","pos","date","time","place","who","fact","pvtr","measure","att","szdate","num","sign"];
-const M={foreign:["замечание","выговор","снижение размера премии на __%","увольнение по соответствующим основаниям"],
-local:["штраф 175 EGP","штраф 200 EGP","штраф 250 EGP","предупреждение без штрафа"]};
-const $=id=>document.getElementById(id);
-function d(v){if(!v)return"[уточнить]";const p=v.split("-");return p[2]+"."+p[1]+"."+p[0]}
-function v(id,def){const x=$(id).value.trim();return x||def||"[уточнить]"}
-function fillM(){$("measures").innerHTML=M[$("cat").value].map(m=>"<option value='"+m+"'>").join("")}
-function save(){const o={};F.forEach(f=>o[f]=$(f).value);localStorage.setItem("sz",JSON.stringify(o))}
-function load(){const o=JSON.parse(localStorage.getItem("sz")||"{}");F.forEach(f=>{if(o[f]!==undefined)$(f).value=o[f]})}
-function make(){
- save();
- const t=$("type").value,fio=v("fioN"),pos=v("pos"),dt=d($("date").value),tm=v("time"),pl=v("place"),who=v("who");
- const pv=$("pvtr").value.trim()?"пункта "+$("pvtr").value.trim():"[уточнить пункт]";
- let body;
- if(t=="alco")body="Довожу до Вашего сведения, что "+dt+" в "+tm+" "+pos+" "+fio+" находился на территории ("+pl+") в состоянии алкогольного опьянения. Факт выявлен "+who+".";
- else if(t=="buy")body="Довожу до Вашего сведения, что "+dt+" в "+tm+" "+pos+" "+fio+" приобрёл алкогольную продукцию ("+pl+"). Факт выявлен "+who+".";
- else if(t=="fight")body="Довожу до Вашего сведения, что "+dt+" в "+tm+" ("+pl+") произошла конфликтная ситуация с участием "+pos+" "+v("fioG")+". Факт выявлен "+who+".";
- else body="Довожу до Вашего сведения, что "+dt+" в "+tm+" ("+pl+") "+pos+" "+fio+" допустил нарушение. Факт выявлен "+who+".";
- const fact=$("fact").value.trim(); if(fact)body+="\n"+fact;
- body+="\nУказанными действиями нарушены требования "+pv+" Правил внутреннего трудового распорядка Филиала ООО «Трест РосСЭМ» РосСЭМ Пвтр-02-09-02-2025, утверждённых приказом № 334/01/1/579-П от 05.11.2025.";
- const sg=v("sign").split(";");
- let att="",lines=$("att").value.split("\n").map(s=>s.trim()).filter(s=>s);
- if(lines.length){att="\n\nПриложения:\n"+lines.map((s,i)=>{const p=s.split(";");return(i+1)+". "+p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."}).join("\n")}
- const txt="Филиал ООО «Трест РосСЭМ»,\nЕгипет, г. Каир\n\nБлок безопасности\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+d($("szdate").value)+" г. № 334-09/02/01-06/"+v("num","[XXX]")+"-СЗ\n\nВ отношении "+v("fioG")+
- "\n\n\t\t\tДиректору филиала\n\t\t\tГампе А.В.\n\n"+body+
- "\n\nПредлагаю: применить в отношении "+v("fioG")+" меру — "+v("measure")+".\n\nНа Ваше решение."+att+
- "\n\n"+sg[0].trim()+"\t\t"+((sg[1]||"").trim())+"\n\nСайдалиев Вячеслав Фархадович\n01026297546";
- $("out").textContent=txt;
-}
-function share(){const t=$("out").textContent;if(!t){alert("Сначала сформируй СЗ");return}
- if(window.Android)Android.share(t);else navigator.clipboard.writeText(t)}
-function clearAll(){if(confirm("Очистить форму?")){F.forEach(f=>{if(!["type","cat","sign"].includes(f))$(f).value=""});save();$("out").textContent=""}}
-$("cat").onchange=fillM;F.forEach(f=>$(f).addEventListener("change",save));
-load();fillM();
-</script>
-</body>
-</html>
+<label>Гражданство</label>
+<input id="cit" list="cits">
+<datalist id="cits">
+<option value="гражданин Российской Федерац
