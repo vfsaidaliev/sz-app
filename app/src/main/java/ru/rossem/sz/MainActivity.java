@@ -2,10 +2,12 @@ package ru.rossem.sz;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
     private WebView web;
@@ -35,6 +37,20 @@ public class MainActivity extends Activity {
             i.setType("text/plain");
             i.putExtra(Intent.EXTRA_TEXT, text);
             startActivity(Intent.createChooser(i, "Отправить СЗ"));
+        }
+
+        @JavascriptInterface
+        public void email(String to, String subject, String body) {
+            Intent i = new Intent(Intent.ACTION_SENDTO);
+            i.setData(Uri.parse("mailto:"));
+            i.putExtra(Intent.EXTRA_EMAIL, new String[]{to});
+            i.putExtra(Intent.EXTRA_SUBJECT, subject);
+            i.putExtra(Intent.EXTRA_TEXT, body);
+            try {
+                startActivity(Intent.createChooser(i, "Отправить на почту"));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Не найдено почтовое приложение", Toast.LENGTH_LONG).show());
+            }
         }
     }
 }
