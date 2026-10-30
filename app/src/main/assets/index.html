@@ -548,23 +548,29 @@ function dbRefresh(){
  $("dbBox").style.display=BASE?"":"none";$("dbDel").style.display=BASE?"":"none";
  $("dbInfo").textContent=dbText();
  $("dbLine").innerHTML=BASE?"База от "+d(BASE.date)+", "+BASE.rows.length+" чел. · <a onclick='pickBase()'>Обновить</a>":"";
- if(BASE){BASE.rows.forEach(r=>r[5]=(r[5]||"").replace(PREF,""));BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]))}
+ if(BASE){BASE.rows.forEach(r=>r[5]=(r[5]||"").replace(PREF,""));BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));BASE.fn=BASE.rows.map(r=>norm(r[1]))}
 }
 function search(){
  const q=norm($("q").value),box=$("qres");
- if(!BASE||q.length<2){box.style.display="none";return}
- /* число из 1–2 цифр — только отдельным словом (№ участка), длиннее — начало слова (таб. №), текст — любая часть */
- /* «участок 6», «цех 1», «группа 2», «отдел …» — число относится к подразделению */
+ if(!BASE||!q){box.style.display="none";return}
+ /* текст из 1 буквы — начало слова, длиннее — любая часть слова;
+    число — начало таб. №, или отдельное число (1–2 цифры, № участка), или начало числа;
+    «участок 6», «цех 1», «группа 2», «отдел …» — число относится к подразделению */
  const tk=q.split(" "),w=[];
  tk.forEach((t,i)=>{const pr=tk[i-1]||"";
-  if(/^\d+$/.test(t)&&/^(участ|цех|групп|отдел|эо)/.test(pr)){w.pop();w.push(new RegExp(pr+"[^ ]* "+t+"( |$)"))}
-  else w.push(/^\d+$/.test(t)?new RegExp("(^| )"+t+(t.length<3?"( |$)":"")):t)});
+  if(/^\d+$/.test(t)&&/^(участ|цех|групп|отдел|эо)/.test(pr)){w.pop();const re=new RegExp(pr+"[^ ]* "+t+"( |$)");w.push(i=>re.test(BASE.hay[i]))}
+  else if(/^\d+$/.test(t)){const re=new RegExp("(^| )"+t+(t.length<3?"( |$)":""));w.push(i=>BASE.rows[i][0].startsWith(t)||re.test(BASE.hay[i]))}
+  else if(t.length<2){const re=new RegExp("(^| |-)"+t);w.push(i=>re.test(BASE.hay[i]))}
+  else w.push(i=>BASE.hay[i].includes(t))});
+ /* порядок: точный таб. №, начало таб. №, начало фамилии, начало любого слова ФИО, остальные */
+ const t0=tk[0],score=i=>{const r=BASE.rows[i],f=BASE.fn[i];
+  return r[0]==q?5:r[0].startsWith(t0)?4:f.startsWith(t0)?3:(" "+f).includes(" "+t0)?2:0};
  const hit=[];
- for(let i=0;i<BASE.rows.length&&hit.length<200;i++){const h=BASE.hay[i];if(w.every(t=>typeof t=="string"?h.includes(t):t.test(h)))hit.push(i)}
- hit.sort((a,b)=>(BASE.rows[b][0]==q)-(BASE.rows[a][0]==q));
+ for(let i=0;i<BASE.rows.length;i++)if(w.every(p=>p(i)))hit.push([score(i),i]);
+ hit.sort((a,b)=>b[0]-a[0]||(a[0]==2||a[0]==3?BASE.fn[a[1]].localeCompare(BASE.fn[b[1]],"ru"):a[1]-b[1]));
  box.style.display="";
- box.innerHTML=hit.length?hit.slice(0,30).map(i=>{const r=BASE.rows[i];return "<div class='item res' onclick='pickRow("+i+")'><span><b>"+esc(r[1])+"</b><small class='h'>таб. № "+esc(r[0])+" · "+esc(r[4])+" · "+esc(r[5])+"</small></span></div>"}).join("")+
-  (hit.length>30?"<div class='item'><small class='h'>Показаны первые 30 из "+(hit.length<200?hit.length:"200+")+". Уточните запрос.</small></div>":""):"<div class='item'><small class='h'>Не найдено</small></div>";
+ box.innerHTML=hit.length?hit.slice(0,30).map(([,i])=>{const r=BASE.rows[i];return "<div class='item res' onclick='pickRow("+i+")'><span><b>"+esc(r[1])+"</b><small class='h'>таб. № "+esc(r[0])+" · "+esc(r[4])+" · "+esc(r[5])+"</small></span></div>"}).join("")+
+  (hit.length>30?"<div class='item'><small class='h'>Показаны первые 30 из "+hit.length+". Продолжайте ввод, чтобы сузить список.</small></div>":""):"<div class='item'><small class='h'>Не найдено</small></div>";
 }
 function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-1]||"";
  if(w.some(x=>/^(кызы|кизи|гызы)$/.test(x))||/(вна|чна)$/.test(l))return "f";
