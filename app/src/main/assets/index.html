@@ -62,6 +62,12 @@ pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px so
 .nav button{margin:0}
 .mail{display:flex;align-items:center;gap:6px}.mail input{flex:1}.mail span{font-size:16px;white-space:nowrap;color:var(--muted)}
 .res{cursor:pointer}.res b{font-weight:500}
+.sp{position:fixed;inset:0;z-index:20;overflow-y:auto;padding:12px;box-sizing:border-box;
+ background:linear-gradient(165deg,var(--bg1),var(--bg2) 55%,var(--bg3))}
+.sp-top{position:sticky;top:-12px;margin:-12px -12px 8px;padding:12px;display:flex;gap:8px;background:var(--glass);
+ border-bottom:1px solid var(--glass-b);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.sp-top input{flex:1}.sp-top button{width:auto;margin:0;padding:0 18px}
+.sp .hint{margin:4px 2px 8px}
 .dbline{font-size:12px;color:var(--muted);margin-top:6px}.dbline a{color:var(--accent)}
 details summary{font-size:14px;color:var(--muted)}
 </style>
@@ -87,9 +93,7 @@ details summary{font-size:14px;color:var(--muted)}
 <div class="step" id="s2">
 <h2>2. Кто нарушил?</h2>
 <div id="dbBox" style="display:none">
-<label>Найти в базе работников</label>
-<input id="q" type="search" placeholder="таб. №, ФИО, участок или должность" autocomplete="off" autocorrect="off">
-<div id="qres" class="items" style="display:none"></div>
+<button onclick="openSearch()">🔍 Найти работника в базе</button>
 <div class="dbline" id="dbLine"></div>
 </div>
 <label>Это работник</label>
@@ -97,7 +101,8 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Пол</label>
 <div class="pick" data-f="sex"><button data-v="m">Мужчина</button><button data-v="f">Женщина</button></div>
 <label>Фамилия Имя Отчество полностью</label>
-<input id="fioFull" placeholder="Иванов Иван Иванович">
+<input id="fioFull" placeholder="Иванов Иван Иванович" autocomplete="off">
+<div id="fioRes" class="items" style="display:none"></div>
 <small class="h">Поля ниже заполнятся сами. Проверьте и при ошибке исправьте.</small>
 <label>Коротко (кто): Иванов И.И.</label>
 <input id="fioN">
@@ -223,6 +228,13 @@ details summary{font-size:14px;color:var(--muted)}
 <button class="alt" onclick="make()">Обновить текст</button>
 </details>
 <button class="alt" onclick="clearAll()">Новая записка (очистить всё)</button>
+</div>
+
+<!-- СТРАНИЦА ПОИСКА ПО БАЗЕ -->
+<div id="sp" class="sp" style="display:none">
+<div class="sp-top"><input id="q" type="search" placeholder="таб. №, ФИО, участок или должность" autocomplete="off" autocorrect="off"><button class="alt" onclick="closeSearch()">✕</button></div>
+<div class="hint" id="qhint">Начните вводить — варианты появятся сразу</div>
+<div id="qres" class="items" style="display:none"></div>
 </div>
 
 <div class="nav"><button class="alt" id="bBack" onclick="go(-1)">Назад</button><button id="bNext" onclick="go(1)">Далее</button></div>
@@ -479,13 +491,13 @@ function copyTxt(){const t=make();
  else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>alert("Текст скопирован"));
 }
 /* системная кнопка «Назад»: шаг назад; false — закрыть приложение */
-function back(){if(step>1){go(-1);return true}return false}
+function back(){if($("sp").style.display==""){closeSearch();return true}if(step>1){go(-1);return true}return false}
 function clearAll(){if(!confirm("Начать новую записку? Всё введённое будет удалено."))return;
  const keep={mailTo:$("mailTo").value,who:$("who").value,wtel:$("wtel").value,sign:$("sign").value,wsex:P.wsex};
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
  Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",wsex:keep.wsex});manual={};
  ["mailTo","who","wtel","sign"].forEach(k=>setv(k,keep[k]));
- $("q").value="";$("qres").style.display="none";
+ closeSearch();$("fioRes").style.display="none";
  $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
 /* ===== БАЗА РАБОТНИКОВ (файл Excel из учётной системы) =====
  колонки ищутся по заголовку и проверяются по содержимому; из подходящих берётся та, где текст полнее;
@@ -550,9 +562,9 @@ function dbRefresh(){
  $("dbLine").innerHTML=BASE?"База от "+d(BASE.date)+", "+BASE.rows.length+" чел. · <a onclick='pickBase()'>Обновить</a>":"";
  if(BASE){BASE.rows.forEach(r=>r[5]=(r[5]||"").replace(PREF,""));BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));BASE.fn=BASE.rows.map(r=>norm(r[1]))}
 }
-function search(){
- const q=norm($("q").value),box=$("qres");
- if(!BASE||!q){box.style.display="none";return}
+/* отбор по запросу: массив индексов строк базы в порядке показа */
+function find(q0){
+ const q=norm(q0);if(!BASE||!q)return [];
  /* текст из 1 буквы — начало слова, длиннее — любая часть слова;
     число — начало таб. №, или отдельное число (1–2 цифры, № участка), или начало числа;
     «участок 6», «цех 1», «группа 2», «отдел …» — число относится к подразделению */
@@ -568,10 +580,23 @@ function search(){
  const hit=[];
  for(let i=0;i<BASE.rows.length;i++)if(w.every(p=>p(i)))hit.push([score(i),i]);
  hit.sort((a,b)=>b[0]-a[0]||(a[0]==2||a[0]==3?BASE.fn[a[1]].localeCompare(BASE.fn[b[1]],"ru"):a[1]-b[1]));
- box.style.display="";
- box.innerHTML=hit.length?hit.slice(0,30).map(([,i])=>{const r=BASE.rows[i];return "<div class='item res' onclick='pickRow("+i+")'><span><b>"+esc(r[1])+"</b><small class='h'>таб. № "+esc(r[0])+" · "+esc(r[4])+" · "+esc(r[5])+"</small></span></div>"}).join("")+
-  (hit.length>30?"<div class='item'><small class='h'>Показаны первые 30 из "+hit.length+". Продолжайте ввод, чтобы сузить список.</small></div>":""):"<div class='item'><small class='h'>Не найдено</small></div>";
+ return hit.map(h=>h[1]);
 }
+function rowHtml(i){const r=BASE.rows[i];return "<div class='item res' onmousedown='event.preventDefault()' onclick='pickRow("+i+")'><span><b>"+esc(r[1])+"</b><small class='h'>таб. № "+esc(r[0])+" · "+esc(r[4])+" · "+esc(r[5])+"</small></span></div>"}
+function render(box,q,max,quiet){
+ const hit=find(q);
+ if(!norm(q)||quiet&&!hit.length){box.style.display="none";return}
+ box.style.display="";
+ box.innerHTML=hit.length?hit.slice(0,max).map(rowHtml).join("")+
+  (hit.length>max?"<div class='item'><small class='h'>Показаны первые "+max+" из "+hit.length+". Продолжайте ввод, чтобы сузить список.</small></div>":""):"<div class='item'><small class='h'>Не найдено</small></div>";
+}
+function search(){render($("qres"),$("q").value,30);$("qhint").style.display=norm($("q").value)?"none":""}
+/* подсказки при вводе ФИО прямо в поле шага 2 */
+function fioHint(){if(!BASE)return;render($("fioRes"),$("fioFull").value,8,1);
+ /* поле — под шапку, чтобы подсказки не закрывала клавиатура */
+ const e=$("fioFull"),top=e.getBoundingClientRect().top-document.querySelector(".top").offsetHeight-8;if(Math.abs(top)>4)window.scrollBy(0,top)}
+function openSearch(){$("sp").style.display="";$("q").value="";search();$("q").focus()}
+function closeSearch(){$("sp").style.display="none";$("q").blur()}
 function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-1]||"";
  if(w.some(x=>/^(кызы|кизи|гызы)$/.test(x))||/(вна|чна)$/.test(l))return "f";
  if(w.some(x=>/^(оглы|угли|улы|уулу)$/.test(x))||/(вич|ич|улы)$/.test(l))return "m";return ""}
@@ -602,7 +627,7 @@ function pickRow(i){
  if(cs){$("cit").value=cs[1];$("citOther").value=""}
  else if(cit){$("cit").value="*";$("citOther").value=cit}
  else $("cit").value="";
- $("q").value="";$("qres").style.display="none";
+ closeSearch();$("fioRes").style.display="none";
  refresh();save();
 }
 build();
@@ -610,6 +635,8 @@ F.forEach(f=>{$(f).addEventListener("change",()=>{refresh();save()});$(f).addEve
 ["fioN","fioG","fioA"].forEach(f=>$(f).addEventListener("input",()=>{manual[f]=!!$(f).value.trim();save()}));
 $("fioFull").addEventListener("input",autoFio);
 $("q").addEventListener("input",search);
+$("fioFull").addEventListener("input",fioHint);
+$("fioFull").addEventListener("blur",()=>setTimeout(()=>$("fioRes").style.display="none",150));
 try{const s=window.Android&&Android.baseLoad?Android.baseLoad():"";if(s)BASE=JSON.parse(s)}catch(e){BASE=null}
 dbRefresh();
 load();refresh();
