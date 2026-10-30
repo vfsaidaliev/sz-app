@@ -91,7 +91,6 @@ details summary{font-size:14px;color:var(--muted)}
 <input id="q" type="search" placeholder="таб. №, ФИО, участок или должность" autocomplete="off" autocorrect="off">
 <div id="qres" class="items" style="display:none"></div>
 <div class="dbline" id="dbLine"></div>
-<div class="sum" id="qwarn" style="display:none"></div>
 </div>
 <label>Это работник</label>
 <div class="pick" data-f="cat"><button data-v="foreign">Иностранный (из России и др.)</button><button data-v="local">Местный (египтянин и др.)</button></div>
@@ -486,19 +485,25 @@ function clearAll(){if(!confirm("Начать новую записку? Всё 
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
  Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",wsex:keep.wsex});manual={};
  ["mailTo","who","wtel","sign"].forEach(k=>setv(k,keep[k]));
- $("q").value="";$("qres").style.display="none";$("qwarn").style.display="none";
+ $("q").value="";$("qres").style.display="none";
  $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
 /* ===== БАЗА РАБОТНИКОВ (файл Excel из учётной системы) =====
- колонки ищутся по заголовку и проверяются по содержимому; хранится только то, что нужно для СЗ */
+ колонки ищутся по заголовку и проверяются по содержимому; из подходящих берётся та, где текст полнее;
+ хранится только то, что нужно для СЗ */
 const COLS={
  tab:{h:/^таб(\.|ельный)?\s*(№|номер)/i,ok:x=>/^\d{3,}$/.test(x)},
  fio:{h:/^(ф\.?\s*и\.?\s*о|сотрудник|работник|табельный номер)/i,ok:x=>/[A-Za-zА-Яа-яЁё]{2,}\s+[A-Za-zА-Яа-яЁё]/.test(x)},
  cit:{h:/(госпринадлежн|гражданств)/i,ok:x=>/[А-Яа-яЁё]/.test(x)},
  dob:{h:/^дата\s*рожд/i,ok:x=>/^\d{4,5}(\.\d+)?$|^\d{4}-\d\d-\d\d|^\d\d\.\d\d\.\d{4}$/.test(x)},
  pos:{h:/должност/i,ok:x=>/[А-Яа-яЁё]{3,}/.test(x)},
- div:{h:/(подразделени|участок)/i,ok:x=>/[А-Яа-яЁё]{3,}/.test(x)}
+ div:{h:/(подразделени|участок)/i,ok:x=>/[А-Яа-яЁё]{3,}/.test(x)},
+ sex:{h:/^пол$/i,ok:x=>/^(м|ж|муж|жен|мужской|женский|male|female|m|f)\.?$/i.test(x)},
+ fam:{h:/^фамилия$/i,ok:x=>/[A-Za-zА-Яа-яЁё]/.test(x)},
+ nam:{h:/^имя$/i,ok:x=>/[A-Za-zА-Яа-яЁё]/.test(x)},
+ otc:{h:/^отчество$/i,ok:x=>/[A-Za-zА-Яа-яЁё]/.test(x)}
 };
-const CUT=40; /* длина, на которой учётная система обрезает текст */
+/* служебные приставки категорий в названии подразделения — не учитываются */
+const PREF=/^(ОПР|ИТР|ВПР|ПМ)\s+/;
 const CIT=[[/^(рф|россия|российск)/,"Российской Федерации"],[/^(белорус|беларус)/,"Республики Беларусь"],[/^казах/,"Республики Казахстан"],
  [/^узбек/,"Республики Узбекистан"],[/^(кирги|кыргыз)/,"Киргизской Республики"],[/^таджик/,"Республики Таджикистан"],[/^египет/,"Арабской Республики Египет"]];
 let BASE=null;
@@ -509,11 +514,12 @@ function xdate(x){x=String(x).trim();let m;
  if(m=x.match(/^(\d{4})-(\d\d)-(\d\d)/))return m[0];
  if(m=x.match(/^(\d\d)\.(\d\d)\.(\d{4})$/))return m[3]+"-"+m[2]+"-"+m[1];return ""}
 function mapCols(rows){
- const h=rows[0].map(x=>String(x).trim()),body=rows.slice(1,51),idx={};
- Object.keys(COLS).forEach(k=>{
+ const h=rows[0].map(x=>String(x).trim()),body=rows.slice(1,201),idx={};
+ Object.keys(COLS).forEach(k=>{let best=-1;
   for(let i=0;i<h.length;i++){if(Object.values(idx).includes(i)||!COLS[k].h.test(h[i]))continue;
    const vals=body.map(r=>String(r[i]||"").trim()).filter(x=>x);
-   if(vals.length&&vals.filter(COLS[k].ok).length>=vals.length*0.8){idx[k]=i;break}}
+   if(!vals.length||vals.filter(COLS[k].ok).length<vals.length*0.8)continue;
+   const len=vals.reduce((a,x)=>a+x.length,0);if(len>best){best=len;idx[k]=i}}
  });
  return idx;
 }
@@ -521,10 +527,13 @@ function baseParsed(name){
  let rows;try{rows=JSON.parse(Android.baseTake())}catch(e){alert("Не удалось прочитать файл");return}
  if(!rows.length){alert("Файл пустой");return}
  const idx=mapCols(rows);
- if(idx.tab==null||idx.fio==null){alert("В файле не найдены колонки с табельным номером и ФИО. Проверьте, что это выгрузка базы работников (.xlsx).");return}
+ const parts=idx.fam!=null&&idx.nam!=null;
+ if(idx.tab==null||idx.fio==null&&!parts){alert("В файле не найдены колонки с табельным номером и ФИО. Проверьте, что это выгрузка базы работников (.xlsx).");return}
  const g=(r,k)=>idx[k]==null?"":String(r[idx[k]]||"").trim();
- const list=rows.slice(1).filter(r=>g(r,"tab")&&g(r,"fio")).map(r=>[g(r,"tab"),g(r,"fio"),g(r,"cit"),xdate(g(r,"dob")),g(r,"pos"),g(r,"div")]);
- const miss=["cit","dob","pos","div"].filter(k=>idx[k]==null).map(k=>({cit:"гражданство",dob:"дата рождения",pos:"должность",div:"подразделение"})[k]);
+ const fio=r=>parts?[g(r,"fam"),g(r,"nam"),g(r,"otc")].filter(x=>x).join(" "):g(r,"fio");
+ const sex=r=>{const x=g(r,"sex").toLowerCase();return /^(м|муж|мужской|male|m)\.?$/.test(x)?"m":/^(ж|жен|женский|female|f)\.?$/.test(x)?"f":""};
+ const list=rows.slice(1).filter(r=>g(r,"tab")&&fio(r)).map(r=>[g(r,"tab"),fio(r),g(r,"cit"),xdate(g(r,"dob")),g(r,"pos"),g(r,"div").replace(PREF,""),sex(r)]);
+ const miss=["cit","dob","pos","div","sex"].filter(k=>idx[k]==null).map(k=>({cit:"гражданство",dob:"дата рождения",pos:"должность",div:"подразделение",sex:"пол"})[k]);
  BASE={name:name||"",date:today(),rows:list};
  if(!Android.baseSave(JSON.stringify(BASE)))alert("Не удалось сохранить базу в памяти телефона");
  dbRefresh();
@@ -539,7 +548,7 @@ function dbRefresh(){
  $("dbBox").style.display=BASE?"":"none";$("dbDel").style.display=BASE?"":"none";
  $("dbInfo").textContent=dbText();
  $("dbLine").innerHTML=BASE?"База от "+d(BASE.date)+", "+BASE.rows.length+" чел. · <a onclick='pickBase()'>Обновить</a>":"";
- if(BASE)BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));
+ if(BASE){BASE.rows.forEach(r=>r[5]=(r[5]||"").replace(PREF,""));BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]))}
 }
 function search(){
  const q=norm($("q").value),box=$("qres");
@@ -568,7 +577,7 @@ function adjG(w){const l=w.toLowerCase();
  if(/(ый|ой|ое)$/.test(l))return w.slice(0,-2)+"ого";
  if(/ая$/.test(l))return w.slice(0,-2)+"ой";if(/яя$/.test(l))return w.slice(0,-2)+"ей";return null}
 function divG(div){
- const w=div.replace(/^(ОПР|ИТР|ВПР|ПМ)\s+/,"").split(/\s+/);
+ const w=div.replace(PREF,"").split(/\s+/);
  const h=w.findIndex(x=>NOUN[x.toLowerCase()]);if(h<0)return null;
  const out=[];
  for(let i=0;i<h;i++){if(/\./.test(w[i]))return null;const a=adjG(w[i]);if(!a)return null;out.push(lc(a))}
@@ -576,25 +585,18 @@ function divG(div){
  return out.concat(w.slice(h+1)).join(" ").replace(/№\s*(\d)/g,"№ $1");
 }
 function pickRow(i){
- const r=BASE.rows[i],warn=[];
- const [tab,fio,cit,dob,pos,div]=r;
+ const [tab,fio,cit,dob,pos,div0,sx0]=BASE.rows[i],div=(div0||"").replace(PREF,"");
  const cs=CIT.find(c=>c[0].test(norm(cit)));
  P.cat=cs&&cs[1]=="Арабской Республики Египет"?"local":"foreign";
- const sx=sexOf(fio);if(sx)P.sex=sx;else warn.push("пол не определён по ФИО — выберите вручную");
+ const sx=sx0||sexOf(fio);if(sx)P.sex=sx;
  manual={};$("fioFull").value=fio;autoFio();
  const dg=div?divG(div):"";
  $("pos").value=[lc(pos),dg==null?div:dg].filter(x=>x).join(dg==null?", ":" ");
- if(dg==null)warn.push("подразделение не удалось просклонять — исправьте поле «Должность, разряд, участок»");
  $("tab").value=tab;$("dob").value=dob||"";
  if(cs){$("cit").value=cs[1];$("citOther").value=""}
- else if(cit){$("cit").value="*";$("citOther").value=cit;warn.push("гражданство «"+cit+"» впишите в форме «гражданин …»")}
- else{$("cit").value="";warn.push("в базе нет гражданства")}
- if(fio.length>=CUT||/-$/.test(fio))warn.push("ФИО в базе обрезано или заканчивается на «-» — проверьте и допишите полностью");
- if(div.length>=CUT||pos.length>=CUT)warn.push("название должности или подразделения в базе обрезано — допишите");
- if(!dob)warn.push("в базе нет даты рождения");
+ else if(cit){$("cit").value="*";$("citOther").value=cit}
+ else $("cit").value="";
  $("q").value="";$("qres").style.display="none";
- $("qwarn").style.display=warn.length?"":"none";
- $("qwarn").innerHTML=warn.length?"<b>Проверьте:</b> "+esc(warn.join("; ")):"";
  refresh();save();
 }
 build();
