@@ -1,8 +1,7 @@
-/* Формирование служебной записки в формате DOCX и отправка вложением.
+/* Формирование служебной записки в формате DOCX.
    Оформление: Times New Roman 14, А4, поля 25/20/10/20 мм, по ширине,
    абзацный отступ 1,25 см, одинарный интервал, шапка — таблица без рамок. */
 (function(){
-var AR=document.documentElement.lang=="ar";
 var TW=9921; /* ширина текста: 210 мм − 25 мм − 10 мм, в twips */
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function r(t,u){return '<w:r>'+(u?'<w:rPr><w:u w:val="single"/></w:rPr>':'')+'<w:t xml:space="preserve">'+esc(t)+'</w:t></w:r>'}
@@ -13,32 +12,23 @@ function p(runs,o){o=o||{};var pr='';
  pr+='<w:jc w:val="'+(o.jc||"both")+'"/>';
  return '<w:p><w:pPr>'+pr+'</w:pPr>'+(runs||'')+'</w:p>'}
 function cell(w,content,top){return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/>'+(top?'<w:vAlign w:val="top"/>':'')+'</w:tcPr>'+content+'</w:tc>'}
-function build(t){
- var parts=t.split("\n\nУважаемый Андрей Владимирович!\n\n");
- var head=parts[0].split("\n"),rest=parts[1]||"";
- var dl="",otn="",addr=[];
- head.forEach(function(l){if(/ № /.test(l)&&!dl)dl=l;else if(/^В отношении/.test(l))otn=l;else if(/^\t/.test(l))addr.push(l.trim())});
- var m=dl.match(/^(.*?) № (.*)$/)||["",dl,""];
- var L=p(r("Филиал ООО «Трест РосСЭМ»,"),{jc:"center"})+p(r("Египет, г. Каир"),{jc:"center"})+p("",{jc:"center"})+
-  p(r("Блок безопасности"),{jc:"center"})+p("",{jc:"center"})+p(r("СЛУЖЕБНАЯ ЗАПИСКА"),{jc:"center"})+p("",{jc:"center"})+
-  p(r(m[1],1)+r(" № ")+r(m[2],1),{jc:"center"})+p("",{jc:"center"})+p(r(otn),{jc:"left"});
- var Rc=addr.map(function(a){return p(r(a),{jc:"left"})}).join("");
+/* z — структура записки, формируемая make() в index.html */
+function build(z){
+ var C={jc:"center"},L="";
+ z.head.forEach(function(l){L+=p(r(l),C)});
+ L+=p("",C)+p(r(z.unit),C)+p("",C)+p(r("СЛУЖЕБНАЯ ЗАПИСКА"),C)+p("",C)+
+  p(r(z.date,1)+r(" № ")+r(z.num,1),C)+p("",C)+p(r(z.otn),{jc:"left"});
+ var Rc=z.addr.map(function(a){return p(r(a),{jc:"left"})}).join("");
  var none='<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
  var lw=5670,rw=TW-lw;
  var tbl='<w:tbl><w:tblPr><w:tblW w:w="'+TW+'" w:type="dxa"/><w:tblBorders>'+none+'</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr>'+
   '<w:tblGrid><w:gridCol w:w="'+lw+'"/><w:gridCol w:w="'+rw+'"/></w:tblGrid><w:tr>'+cell(lw,L)+cell(rw,Rc,1)+'</w:tr></w:tbl>';
- var k=rest.indexOf("\n\nНа Ваше решение.");
- var body=k<0?rest:rest.slice(0,k),tail=k<0?"":rest.slice(k+2);
- var B=p("",{})+p(r("Уважаемый Андрей Владимирович!"),{jc:"center"})+p("",{});
- body.split("\n").filter(function(s){return s.trim()}).forEach(function(s){B+=p(r(s.trim()),{ind:1})});
- var blocks=tail.split("\n\n"),T="";
- blocks.forEach(function(bl,i){
-  if(!bl.trim())return;
-  if(/^На Ваше решение/.test(bl)){T+=p(r(bl.trim()),{ind:1})+p("",{});return}
-  if(/^Приложени/.test(bl)){bl.split("\n").forEach(function(s){T+=p(r(s),{})});T+=p("",{})+p("",{});return}
-  if(/\t/.test(bl)){var s=bl.split(/\t+/);T+=p(r(s[0])+tab()+r(s[s.length-1]),{jc:"left",tab:1})+p("",{})+p("",{})+p("",{});return}
-  bl.split("\n").forEach(function(s){T+=p(r(s),{jc:"left"})});
- });
+ var B=p("",{})+p(r(z.greet),C)+p("",{});
+ z.body.forEach(function(s){B+=p(r(s),{ind:1})});
+ var T=p(r(z.decision),{ind:1})+p("",{});
+ if(z.att.length){z.att.forEach(function(s){T+=p(r(s),{})});T+=p("",{})+p("",{})}
+ T+=p(r(z.sign[0])+tab()+r(z.sign[1]),{jc:"left",tab:1})+p("",{})+p("",{})+p("",{});
+ z.exec.forEach(function(s){T+=p(r(s),{jc:"left"})});
  var sect='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="567" w:bottom="1134" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr>';
  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+tbl+B+T+sect+'</w:body></w:document>';
 }
@@ -70,23 +60,7 @@ function zip(files){
  var res=new Uint8Array(len),pos=0;all.forEach(function(x){res.set(x,pos);pos+=x.length});return res;
 }
 function b64(a){var s="";for(var i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s)}
-window.makeDocx=function(){
- var t=make();
- return b64(zip([["[Content_Types].xml",CT],["_rels/.rels",RELS],["word/document.xml",build(t)],["word/styles.xml",STY],["word/_rels/document.xml.rels",DRELS]]));
-};
-/* устранение двойной точки в конце строки («1 экз..») */
-var oldMake=window.make;
-window.make=function(){var t=oldMake().replace(/\.\.(?=\n|$)/g,".");$("out").textContent=t;return t};
-var oldSend=window.sendMail;
-window.sendMail=function(){
- if(!(window.Android&&Android.emailDocx)){oldSend();return}
- var name=$("mailTo").value.trim().replace(/@.*$/,"");
- if(!name){alert(AR?"اكتب اسم اللي هتبعتله (الجزء اللي قبل @)":"Впишите, кому отправить (часть адреса до @)");return}
- var data=makeDocx();
- var fn=("СЗ "+v("fioN")+" "+d($("date").value)).replace(/[\\\/:*?"<>|\[\]]/g,"").replace(/\s+/g,"_")+".docx";
- var subj="СЗ в отношении "+v("fioG")+" от "+d($("date").value);
- var body="Сообщение о нарушении\n\nВыявил"+(P.wsex=="f"?"а":"")+": "+v("who")+"\nТелефон: "+v("wtel","не указан")+"\nГде нарушитель сейчас: "+v("now","не указано")+"\n\nСлужебная записка во вложении.";
- save();
- Android.emailDocx(name+DOMAIN,subj,body,fn,data);
+window.makeDocx=function(z){
+ return b64(zip([["[Content_Types].xml",CT],["_rels/.rels",RELS],["word/document.xml",build(z)],["word/styles.xml",STY],["word/_rels/document.xml.rels",DRELS]]));
 };
 })();

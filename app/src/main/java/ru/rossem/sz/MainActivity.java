@@ -4,13 +4,20 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.os.Build;
 import android.content.pm.ResolveInfo;
 import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
@@ -26,7 +33,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        boolean dark = night();
+        getWindow().setStatusBarColor(Color.parseColor(dark ? "#060C18" : "#EEF3FB"));
+        getWindow().setNavigationBarColor(Color.parseColor(dark ? "#09111F" : "#F7F2E7"));
+        if (!dark) {
+            int f = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= 26) f |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            getWindow().getDecorView().setSystemUiVisibility(f);
+        }
         web = new WebView(this);
+        web.setBackgroundColor(Color.parseColor(dark ? "#060C18" : "#EEF3FB"));
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -37,8 +53,15 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        web.evaluateJavascript("back()", new ValueCallback<String>() {
+            public void onReceiveValue(String handled) {
+                if (!"true".equals(handled)) finish();
+            }
+        });
+    }
+
+    private boolean night() {
+        return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
     private void toast(final String msg) {
@@ -108,11 +131,27 @@ public class MainActivity extends Activity {
 
     class Bridge {
         @JavascriptInterface
+        public boolean night() {
+            return MainActivity.this.night();
+        }
+
+        @JavascriptInterface
         public void share(String text) {
             Intent i = new Intent(Intent.ACTION_SEND);
             i.setType("text/plain");
             i.putExtra(Intent.EXTRA_TEXT, text);
             startActivity(Intent.createChooser(i, "Отправить СЗ"));
+        }
+
+        @JavascriptInterface
+        public void copy(final String text) {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    cm.setPrimaryClip(ClipData.newPlainText("СЗ", text));
+                    Toast.makeText(MainActivity.this, "Текст скопирован", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
         @JavascriptInterface

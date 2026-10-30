@@ -5,43 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Генератор СЗ</title>
 <style>
-body{font-family:sans-serif;margin:0;padding:12px 12px 90px;background:#f2f4f7;color:#111}
-h1{font-size:19px;margin:4px 0 4px}
-.prog{font-size:13px;color:#1f5fbf;margin-bottom:10px}
-h2{font-size:17px;margin:6px 0 10px}
-label{display:block;font-size:14px;color:#444;margin:12px 0 4px}
-small.h{display:block;color:#888;font-size:11px;margin-top:2px}
-input,select,textarea{width:100%;box-sizing:border-box;padding:11px;font-size:16px;border:1px solid #bbb;border-radius:10px;background:#fff}
+/* Оформление в стиле приложения TrestMail: палитра бренда, «стеклянные» карточки, светлая и тёмная темы */
+:root{--primary:#1F3A5F;--accent:#C9A02A;--on-primary:#fff;--text:#0F1A2B;--muted:#5A667A;--err:#B3261E;
+ --bg1:#EEF3FB;--bg2:#E5ECF7;--bg3:#F7F2E7;--glow:rgba(63,169,245,.22);--glow2:rgba(201,160,42,.16);
+ --glass:rgba(248,250,253,.72);--glass-b:rgba(255,255,255,.85);--field:#fff;--field-b:#C9D3E1;--line:rgba(15,26,43,.08);
+ --sel:rgba(31,58,95,.08);--chip:rgba(31,58,95,.07);--ban:rgba(255,244,214,.8);--ban-b:#FFC94D;--ban-t:#5C4300}
+:root[data-theme=dark]{--primary:#C9A02A;--on-primary:#1B1608;--accent:#C9A02A;--text:#F1F4F9;--muted:#AEB8C8;--err:#F2B8B5;
+ --bg1:#060C18;--bg2:#0D1730;--bg3:#09111F;--glow:rgba(63,169,245,.16);--glow2:rgba(201,160,42,.10);
+ --glass:rgba(22,32,47,.66);--glass-b:rgba(255,255,255,.08);--field:#16202F;--field-b:#223047;--line:rgba(255,255,255,.07);
+ --sel:rgba(201,160,42,.12);--chip:rgba(255,255,255,.07);--ban:rgba(92,67,0,.35);--ban-b:#9A6B00;--ban-t:#FFE3A3}
+*{-webkit-tap-highlight-color:transparent}
+html{min-height:100%;background:var(--bg1)}
+body{font-family:Roboto,sans-serif;margin:0;padding:0 12px 96px;color:var(--text);min-height:100vh;
+ background:radial-gradient(60% 40% at 85% 8%,var(--glow),transparent 70%),radial-gradient(55% 35% at 10% 92%,var(--glow2),transparent 70%),
+ linear-gradient(165deg,var(--bg1),var(--bg2) 55%,var(--bg3));background-attachment:fixed}
+.top{position:sticky;top:0;z-index:5;margin:0 -12px 12px;padding:10px 16px 8px;background:var(--glass);border-bottom:1px solid var(--glass-b);
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.brand{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.brand img{height:32px;width:32px}
+.brand div{border-left:1px solid var(--muted);padding-left:8px;line-height:1.15}
+.brand b{display:block;font-size:12px;font-weight:500;letter-spacing:.06em}
+.brand span{display:block;font-size:10px;letter-spacing:.08em;color:#2F7FC1}
+:root[data-theme=dark] .brand span{color:#3FA9F5}
+h1{font-size:18px;font-weight:600;margin:0}
+.prog{font-size:13px;color:var(--muted);margin-top:2px}
+.prog b{color:var(--accent);font-weight:600}
+.step{display:none;background:var(--glass);border:1px solid var(--glass-b);border-radius:20px;padding:14px;
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 6px 24px rgba(15,26,43,.08)}
+.step.on{display:block}
+h2{font-size:17px;font-weight:600;margin:2px 0 10px}
+.hint{font-size:14px;color:var(--muted)}
+label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}
+small.h{display:block;color:var(--muted);opacity:.85;font-size:11px;margin-top:2px}
+input,select,textarea{width:100%;box-sizing:border-box;padding:12px;font-size:16px;color:var(--text);border:1px solid var(--field-b);border-radius:12px;background:var(--field);font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(201,160,42,.18)}
+input[type=checkbox]{accent-color:var(--primary)}
 textarea{min-height:80px}
-button{width:100%;padding:14px;font-size:17px;margin-top:10px;border:0;border-radius:10px;background:#1f5fbf;color:#fff}
-button.alt{background:#666}
-button.grp{background:#fff;color:#111;border:2px solid #c9d6ea;text-align:left;font-size:17px;padding:14px;margin-top:8px}
-button.grp.on{border-color:#1f5fbf;background:#eaf1fc}
-.items{background:#fff;border:1px solid #ddd;border-radius:10px;padding:4px 10px;margin:4px 0 6px}
-.item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #eee;font-size:16px}
+button{width:100%;padding:14px;font-size:16px;font-weight:500;margin-top:10px;border:0;border-radius:14px;background:var(--primary);color:var(--on-primary);font-family:inherit}
+button:active{opacity:.85}
+button.alt{background:var(--chip);color:var(--text);border:1px solid var(--line)}
+button.grp{background:var(--field);color:var(--text);border:1px solid var(--field-b);text-align:left;font-size:16px;padding:14px;margin-top:8px}
+button.grp.on{border-color:var(--accent);background:var(--sel)}
+.items{background:var(--field);border:1px solid var(--field-b);border-radius:12px;padding:4px 12px;margin:4px 0 6px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px;margin:0;color:var(--text)}
 .item:last-child{border-bottom:0}
-.item input{width:24px;height:24px;flex:none;margin-top:1px}
-.two{display:flex;gap:8px}.two>*{flex:1}
+.item input{width:22px;height:22px;flex:none;margin-top:1px}
+.two{display:flex;gap:8px}.two>*{flex:1;min-width:0}
 .pick{display:flex;gap:8px;flex-wrap:wrap}
-.pick button{width:auto;flex:1 1 40%;background:#fff;color:#111;border:2px solid #c9d6ea;padding:11px;font-size:15px;margin-top:4px}
-.pick button.on{border-color:#1f5fbf;background:#eaf1fc}
-.chips button{width:auto;display:inline-block;background:#e9edf3;color:#222;font-size:13px;padding:8px 10px;margin:4px 4px 0 0;border-radius:16px}
-.sum{background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 10px;font-size:14px;margin-top:10px}
-pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:10px;padding:10px;font-size:14px}
-.nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 12px;background:#f2f4f7;border-top:1px solid #ddd}
+.pick button{width:auto;flex:1 1 40%;background:var(--field);color:var(--text);border:1px solid var(--field-b);padding:11px;font-size:15px;margin-top:4px}
+.pick button.on{border-color:var(--accent);background:var(--sel);font-weight:600}
+.chips button{width:auto;display:inline-block;background:var(--chip);color:var(--text);font-size:13px;padding:8px 12px;margin:4px 4px 0 0;border-radius:16px}
+.sum{background:var(--ban);border:1px solid var(--ban-b);color:var(--ban-t);border-radius:12px;padding:8px 10px;font-size:14px;margin-top:10px}
+pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px solid var(--field-b);border-radius:12px;padding:12px;font-size:14px;font-family:"Times New Roman",serif}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:10px 12px;background:var(--glass);border-top:1px solid var(--glass-b);
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 .nav button{margin:0}
-.mail{display:flex;align-items:center;gap:6px}.mail input{flex:1}.mail span{font-size:16px;white-space:nowrap}
-.step{display:none}.step.on{display:block}
+.mail{display:flex;align-items:center;gap:6px}.mail input{flex:1}.mail span{font-size:16px;white-space:nowrap;color:var(--muted)}
+details summary{font-size:14px;color:var(--muted)}
 </style>
 </head>
 <body>
+<div class="top"><div class="brand"><img src="data:image/webp;base64,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" alt=""><div><b>ТРЕСТ РОССЭМ</b><span>РОСАТОМ</span></div></div>
 <h1>Служебная записка о нарушении</h1>
-<div class="prog" id="prog"></div>
+<div class="prog" id="prog"></div></div>
 
 <!-- ШАГ 1 -->
 <div class="step" id="s1">
 <h2>1. Что случилось?</h2>
-<div style="font-size:14px;color:#555">Нажмите на подходящую группу и отметьте, что именно произошло. Можно отметить несколько.</div>
+<div class="hint">Нажмите на подходящую группу и отметьте, что именно произошло. Можно отметить несколько.</div>
 <div id="groups"></div>
 <div id="otherBox" style="display:none">
 <label>Опишите нарушение своими словами</label>
@@ -168,7 +199,7 @@ pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:10p
 <div class="mail"><input id="mailTo" placeholder="имя" autocapitalize="off" autocorrect="off"><span>@trest-rossem.ru</span></div>
 <button onclick="sendMail()">Отправить на почту</button>
 <button class="alt" onclick="copyTxt()">Скопировать текст</button>
-<details style="margin-top:14px"><summary style="font-size:14px;color:#555">Для блока безопасности</summary>
+<details style="margin-top:14px"><summary>Для блока безопасности</summary>
 <label>Другие приложения (каждое с новой строки: название ; листов)</label>
 <textarea id="att"></textarea>
 <label>Дополнительные пункты ПП Эль-Дабаа.007-2019 (через запятую)</label><input id="ppAdd">
@@ -185,13 +216,22 @@ pre{white-space:pre-wrap;background:#fff;border:1px solid #ccc;border-radius:10p
 <div class="nav"><button class="alt" id="bBack" onclick="go(-1)">Назад</button><button id="bNext" onclick="go(1)">Далее</button></div>
 
 <script>
+/* тема: из Android (ночной режим системы), иначе из браузера */
+(function(){let dk=false;try{dk=window.Android&&Android.night?Android.night():matchMedia("(prefers-color-scheme: dark)").matches}catch(e){}
+ document.documentElement.dataset.theme=dk?"dark":"light"})();
 /* ===== РЕКВИЗИТЫ (менять только здесь) ===== */
 const DOMAIN="@trest-rossem.ru";
 const R={
  filial:"Филиала ООО «Трест РосСЭМ», Египет, г. Каир",
  pp:"Правил поведения персонала Подрядчика, его субподрядных организаций и командируемых лиц при нахождении в Египте в рамках реализации проекта по сооружению АЭС «Эль-Дабаа», а также членов их семей и посетителей (ПП Эль-Дабаа.007-2019), утверждённых приказом № 334-09/8-П от 08.04.2022",
  pvtr:"Правил внутреннего трудового распорядка работников ООО «Трест РосСЭМ» в филиале в Арабской Республике Египет (РосСЭМ Пвтр-02-09-02-2025), утверждённых приказом № 334/01/1/579-П от 05.11.2025",
- med:"распоряжения Филиала ООО «Трест РосСЭМ» в АРЕ № 334-09/37-р от 08.08.2023 года"
+ med:"распоряжения Филиала ООО «Трест РосСЭМ» в АРЕ № 334-09/37-р от 08.08.2023 года",
+ head:["Филиал ООО «Трест РосСЭМ»,","Египет, г. Каир"],
+ unit:"Блок безопасности",
+ num:"334-09/02/01-06/",
+ addr:["Директору филиала","Гампе А.В."],
+ greet:"Уважаемый Андрей Владимирович!",
+ exec:["Сайдалиев Вячеслав Фархадович","01026297546"]
 };
 const U="[уточнить]";
 const PLACES=["на территории Площадки сооружения АЭС «Эль-Дабаа»","на территории жилого посёлка ","на КПП № ","в служебном автобусе ","в общественном месте "];
@@ -245,7 +285,7 @@ const MON=["января","февраля","марта","апреля","мая",
 const $=id=>document.getElementById(id);
 const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","explPages","who","wtel","now","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",wsex:"m",mode:"sb"};
-let step=1,openG="",manual={};
+let step=1,openG="",manual={},SZ=null;
 const N=6;
 function val(id){const e=$(id);return e.type=="checkbox"?e.checked:e.value}
 function setv(id,x){const e=$(id);if(e.type=="checkbox")e.checked=!!x;else e.value=x}
@@ -322,7 +362,7 @@ function refresh(){
  $("citOther").style.display=$("cit").value=="*"?"":"none";
  document.querySelectorAll(".pick").forEach(box=>box.querySelectorAll("button").forEach(b=>b.classList.toggle("on",P[box.dataset.f]==b.dataset.v)));
  document.querySelectorAll(".step").forEach((s,i)=>s.classList.toggle("on",i+1==step));
- $("prog").textContent="Шаг "+step+" из "+N;
+ $("prog").innerHTML="Шаг <b>"+step+"</b> из "+N;
  $("bBack").style.visibility=step>1?"visible":"hidden";
  $("bNext").style.display=step<N?"":"none";
 }
@@ -389,28 +429,45 @@ function make(){
  if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
  $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
  const one=s=>{const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
- let att="";
- if(lines.length==1)att="\n\nПриложение: "+one(lines[0]);
- else if(lines.length>1)att="\n\nПриложения:\n"+lines.map((s,i)=>(i+1)+". "+one(s)).join(";\n")+".";
+ let att=[];
+ if(lines.length==1)att=["Приложение: "+one(lines[0])];
+ else if(lines.length>1)att=["Приложения:"].concat(lines.map((s,i)=>(i+1)+". "+one(s)+(i<lines.length-1?";":".")));
  const sg=v("sign").split(";");
- const txt="Филиал ООО «Трест РосСЭМ»,\nЕгипет, г. Каир\n\nБлок безопасности\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+d($("szdate").value)+" г. № 334-09/02/01-06/"+v("num","[XXX]")+"-СЗ\n\nВ отношении "+g+
-  "\n\n\t\t\tДиректору филиала\n\t\t\tГампе А.В.\n\nУважаемый Андрей Владимирович!\n\n"+b+"\n\nНа Ваше решение."+att+
-  "\n\n"+sg[0].trim()+"\t\t"+(sg[1]||"").trim()+"\n\nСайдалиев Вячеслав Фархадович\n01026297546";
+ /* устранение двойной точки в конце строки («1 экз..») */
+ const dot=s=>s.replace(/\.\.(?=\n|$)/g,".");
+ b=dot(b);att=att.map(dot);
+ /* структура записки: из неё собираются и текст, и DOCX */
+ SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+g,addr:R.addr,greet:R.greet,
+  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[sg[0].trim(),(sg[1]||"").trim()],exec:R.exec};
+ const txt=SZ.head.join("\n")+"\n\n"+SZ.unit+"\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+SZ.date+" № "+SZ.num+"\n\n"+SZ.otn+
+  "\n\n"+SZ.addr.map(s=>"\t\t\t"+s).join("\n")+"\n\n"+SZ.greet+"\n\n"+b+"\n\n"+SZ.decision+(att.length?"\n\n"+att.join("\n"):"")+
+  "\n\n"+SZ.sign.join("\t\t")+"\n\n"+SZ.exec.join("\n");
  $("out").textContent=txt;save();return txt;
 }
-function letter(){
+function letter(withText){
  const t=make();
- return "Сообщение о нарушении\n\nВыявил"+(P.wsex=="f"?"а":"")+": "+v("who")+"\nТелефон: "+v("wtel","не указан")+"\nГде нарушитель сейчас: "+v("now","не указано")+"\n\nПроект служебной записки:\n\n"+t;
+ return "Сообщение о нарушении\n\nВыявил"+(P.wsex=="f"?"а":"")+": "+v("who")+"\nТелефон: "+v("wtel","не указан")+"\nГде нарушитель сейчас: "+v("now","не указано")+
+  (withText?"\n\nПроект служебной записки:\n\n"+t:"\n\nСлужебная записка во вложении.");
 }
 function sendMail(){
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
  if(!name){alert("Впишите, кому отправить (часть адреса до @)");return}
- const to=name+DOMAIN,subj="СЗ в отношении "+v("fioG")+" от "+d($("date").value),body=letter();save();
+ const to=name+DOMAIN,subj="СЗ в отношении "+v("fioG")+" от "+d($("date").value);
+ if(window.Android&&Android.emailDocx){
+  const body=letter(false);
+  const fn=("СЗ "+v("fioN")+" "+d($("date").value)).replace(/[\\\/:*?"<>|\[\]]/g,"").replace(/\s+/g,"_")+".docx";
+  Android.emailDocx(to,subj,body,fn,makeDocx(SZ));return}
+ const body=letter(true);
  if(window.Android&&Android.email)Android.email(to,subj,body);
  else if(window.Android)Android.share(subj+"\n\n"+body);
  else location.href="mailto:"+to+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
 }
-function copyTxt(){const t=make();if(window.Android)Android.share(t);else if(navigator.clipboard)navigator.clipboard.writeText(t)}
+function copyTxt(){const t=make();
+ if(window.Android&&Android.copy)Android.copy(t);
+ else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>alert("Текст скопирован"));
+}
+/* системная кнопка «Назад»: шаг назад; false — закрыть приложение */
+function back(){if(step>1){go(-1);return true}return false}
 function clearAll(){if(!confirm("Начать новую записку? Всё введённое будет удалено."))return;
  const keep={mailTo:$("mailTo").value,who:$("who").value,wtel:$("wtel").value,sign:$("sign").value,wsex:P.wsex};
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);

@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+/* номер сборки GitHub Actions — чтобы новая версия ставилась поверх старой */
+def build = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+
 android {
     namespace 'ru.rossem.sz'
     compileSdk 34
@@ -10,8 +13,8 @@ android {
         applicationId 'ru.rossem.sz'
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode build
+        versionName "1.${build}"
     }
 
     compileOptions {
