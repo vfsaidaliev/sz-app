@@ -158,14 +158,20 @@ details summary{font-size:14px;color:var(--muted)}
 <div id="medBox">
 <label>Проверяли алкотестером?</label>
 <div class="pick" data-f="medQ"><button data-v="yes">Да</button><button data-v="no">Нет</button></div>
-<div id="medData" class="two">
+<div id="medData">
+<div class="two">
 <div><label>Показания, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
 <div><label>№ акта</label><input id="act"></div>
+</div>
+<label>Листов в акте</label><input id="actPages" inputmode="numeric">
 </div>
 </div>
 <label>Объяснительная от нарушителя</label>
 <div class="pick" data-f="expl"><button data-v="yes">Взяли</button><button data-v="no">Не брали</button><button data-v="ref">Отказался писать</button></div>
 <div id="explL"><label>Сколько листов</label><input id="explPages" inputmode="numeric"></div>
+<label>Другие составленные акты (необязательно)</label>
+<textarea id="acts" placeholder="каждый акт с новой строки: название акта ; количество листов"></textarea>
+<small class="h">Все акты попадут в «Приложения» служебной записки.</small>
 </div>
 
 <!-- ШАГ 4 -->
@@ -346,7 +352,7 @@ const V=[
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","explPages","who","wtel","now","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actPages","explPages","acts","who","wtel","now","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",wsex:"m",mode:"sb"};
 let step=1,openG="",manual={},SZ=null;
 const N=6;
@@ -490,6 +496,9 @@ function make(){
  b+="\n\nВ связи с вышеизложенным, предлагаю "+reason+" "+prop+".";
  const lines=[];
  if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
+ /* составленные акты: акт медосвидетельствования и прочие, указанные на шаге 3 */
+ if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("date").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
+ $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
  $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
  const one=s=>{const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
  let att=[];
