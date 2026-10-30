@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Build;
 import android.content.pm.ResolveInfo;
@@ -14,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -22,13 +24,19 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
+    private static final int PICK_BASE = 1;
     private WebView web;
+    private String pendingBase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +66,54 @@ public class MainActivity extends Activity {
                 if (!"true".equals(handled)) finish();
             }
         });
+    }
+
+    private File baseFile() {
+        return new File(getFilesDir(), "base.json");
+    }
+
+    private void js(final String code) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                web.evaluateJavascript(code, null);
+            }
+        });
+    }
+
+    private String displayName(Uri uri) {
+        Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null);
+            if (c != null && c.moveToFirst()) return c.getString(0);
+        } catch (Exception e) {
+        } finally {
+            if (c != null) c.close();
+        }
+        return "";
+    }
+
+    /* выбранный файл Excel читается в фоне; результат забирает index.html через baseTake() */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != PICK_BASE) return;
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+            js("baseError('')");
+            return;
+        }
+        final Uri uri = data.getData();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    InputStream in = getContentResolver().openInputStream(uri);
+                    String json = XlsxReader.toJson(in);
+                    in.close();
+                    pendingBase = json;
+                    js("baseParsed(" + JSONObject.quote(displayName(uri)) + ")");
+                } catch (Throwable e) {
+                    js("baseError(" + JSONObject.quote("Не удалось прочитать файл: " + e.getMessage()) + ")");
+                }
+            }
+        }).start();
     }
 
     private boolean night() {
@@ -141,6 +197,58 @@ public class MainActivity extends Activity {
             i.setType("text/plain");
             i.putExtra(Intent.EXTRA_TEXT, text);
             startActivity(Intent.createChooser(i, "Отправить СЗ"));
+        }
+
+        @JavascriptInterface
+        public void pickBase() {
+            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType("*/*");
+            startActivityForResult(i, PICK_BASE);
+        }
+
+        @JavascriptInterface
+        public String baseTake() {
+            String s = pendingBase;
+            pendingBase = null;
+            return s == null ? "" : s;
+        }
+
+        @JavascriptInterface
+        public boolean baseSave(String json) {
+            try {
+                FileOutputStream out = new FileOutputStream(baseFile());
+                out.write(json.getBytes("UTF-8"));
+                out.close();
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public String baseLoad() {
+            File f = baseFile();
+            if (!f.exists()) return "";
+            try {
+                byte[] b = new byte[(int) f.length()];
+                FileInputStream in = new FileInputStream(f);
+                int n = 0;
+                while (n < b.length) {
+                    int k = in.read(b, n, b.length - n);
+                    if (k < 0) break;
+                    n += k;
+                }
+                in.close();
+                return new String(b, 0, n, "UTF-8");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void baseDelete() {
+            baseFile().delete();
         }
 
         @JavascriptInterface
