@@ -22,7 +22,7 @@ public class XlsxReader {
 
     public static String toJson(InputStream in) throws Exception {
         Map<String, byte[]> files = unzip(in);
-        if (!files.containsKey("xl/workbook.xml")) throw new IOException("Файл не является книгой Excel (.xlsx)");
+        if (!files.containsKey("xl/workbook.xml")) throw new IOException("это не файл Excel в формате .xlsx. Если файл в формате .xls, откройте его в Excel и сохраните как .xlsx");
         List<String> shared = files.containsKey("xl/sharedStrings.xml") ? sharedStrings(files.get("xl/sharedStrings.xml")) : new ArrayList<String>();
         byte[] sheet = files.get(firstSheet(files));
         if (sheet == null) throw new IOException("В книге не найден лист");
