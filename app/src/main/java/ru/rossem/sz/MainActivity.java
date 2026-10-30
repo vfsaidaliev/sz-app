@@ -1,6 +1,10 @@
 package ru.rossem.sz;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
@@ -13,6 +17,8 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
     private WebView web;
@@ -41,6 +47,63 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private Intent mailIntent(String to, String subject, String body, String name, Uri uri) {
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType(DocProvider.MIME);
+        send.putExtra(Intent.EXTRA_EMAIL, new String[]{to});
+        send.putExtra(Intent.EXTRA_SUBJECT, subject);
+        send.putExtra(Intent.EXTRA_TEXT, body);
+        send.putExtra(Intent.EXTRA_STREAM, uri);
+        send.setClipData(ClipData.newRawUri(name, uri));
+        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        return send;
+    }
+
+    private void chooseMail(String to, String subject, String body, String name, Uri uri) {
+        PackageManager pm = getPackageManager();
+        Intent probe = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+        List<ResolveInfo> found = pm.queryIntentActivities(probe, 0);
+        final List<Intent> intents = new ArrayList<Intent>();
+        final List<CharSequence> labels = new ArrayList<CharSequence>();
+        List<String> seen = new ArrayList<String>();
+        for (ResolveInfo ri : found) {
+            String pkg = ri.activityInfo.packageName;
+            if (seen.contains(pkg)) continue;
+            seen.add(pkg);
+            Intent send = mailIntent(to, subject, body, name, uri);
+            send.setPackage(pkg);
+            if (send.resolveActivity(pm) == null) continue;
+            grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intents.add(send);
+            labels.add(ri.loadLabel(pm));
+        }
+        if (intents.isEmpty()) {
+            try {
+                startActivity(Intent.createChooser(mailIntent(to, subject, body, name, uri), "Отправить СЗ"));
+            } catch (Exception e) {
+                toast("Не найдено почтовое приложение");
+            }
+            return;
+        }
+        if (intents.size() == 1) {
+            startActivity(intents.get(0));
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Через какую почту отправить")
+            .setItems(labels.toArray(new CharSequence[0]), new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int which) {
+                    try {
+                        startActivity(intents.get(which));
+                    } catch (Exception e) {
+                        toast("Не удалось открыть почту");
+                    }
+                }
+            })
+            .setNegativeButton("Отмена", null)
+            .show();
     }
 
     class Bridge {
@@ -79,24 +142,13 @@ public class MainActivity extends Activity {
                 out.write(Base64.decode(base64, Base64.DEFAULT));
                 out.close();
 
-                Uri uri = Uri.parse("content://" + DocProvider.AUTHORITY + "/" + Uri.encode(name));
-                Intent send = new Intent(Intent.ACTION_SEND);
-                send.setType(DocProvider.MIME);
-                send.putExtra(Intent.EXTRA_EMAIL, new String[]{to});
-                send.putExtra(Intent.EXTRA_SUBJECT, subject);
-                send.putExtra(Intent.EXTRA_TEXT, body);
-                send.putExtra(Intent.EXTRA_STREAM, uri);
-                send.setClipData(ClipData.newRawUri(name, uri));
-                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                Intent mailOnly = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
-                send.setSelector(mailOnly);
-                try {
-                    startActivity(Intent.createChooser(send, "Отправить на почту"));
-                } catch (Exception e) {
-                    send.setSelector(null);
-                    startActivity(Intent.createChooser(send, "Отправить СЗ"));
-                }
+                final Uri uri = Uri.parse("content://" + DocProvider.AUTHORITY + "/" + Uri.encode(name));
+                final String fTo = to, fSubject = subject, fBody = body, fName = name;
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        chooseMail(fTo, fSubject, fBody, fName, uri);
+                    }
+                });
             } catch (Exception e) {
                 toast("Не удалось сформировать файл: " + e.getMessage());
             }
