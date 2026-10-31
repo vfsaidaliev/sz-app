@@ -178,8 +178,7 @@ details summary{font-size:14px;color:var(--muted)}
 <div id="explL"><label>Сколько листов</label><input id="explPages" inputmode="numeric"></div>
 <div id="refL">
 <label>Акт об отказе от объяснений</label>
-<div class="two"><div><label>№ акта</label><input id="refAct"></div><div><label>Дата акта</label><input id="refDate" type="date"></div></div>
-<label>Листов в акте</label><input id="refPages" inputmode="numeric">
+<div class="two"><div><label>Дата акта</label><input id="refDate" type="date"></div><div><label>Листов в акте</label><input id="refPages" inputmode="numeric"></div></div>
 </div>
 <label>Другие составленные акты (необязательно)</label>
 <textarea id="acts" placeholder="каждый акт с новой строки: название акта ; количество листов"></textarea>
@@ -373,7 +372,7 @@ const V=[
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refAct","refDate","refPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 const N=5;
@@ -511,7 +510,7 @@ function make(){
   b+="\n\nС согласия работника "+g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+v("mg")+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+v("act")+" от "+dw($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";
  }
  if(P.expl=="yes")b+="\n\nВ рамках проверки от "+g+" истребовано письменное объяснение.";
- if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась":" отказался")+", о чём составлен акт об отказе от объяснений № "+v("refAct")+" от "+dw($("refDate").value)+".";
+ if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась":" отказался")+", о чём составлен акт об отказе от объяснений от "+dw($("refDate").value)+".";
  let pp=[],pv=[];
  c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
  pp=uniq(pp.concat(split($("ppAdd").value)));pv=uniq(pv.concat(split($("pvAdd").value)));
@@ -533,7 +532,7 @@ function make(){
  b+="\n\nВ связи с вышеизложенным, предлагаю "+reason+" "+prop+".";
  const lines=[];
  if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
- if(P.expl=="ref")lines.push("Акт об отказе от объяснений № "+v("refAct")+" от "+d($("refDate").value)+" ; "+$("refPages").value.trim());
+ if(P.expl=="ref")lines.push("Акт об отказе от объяснений от "+d($("refDate").value)+" ; "+$("refPages").value.trim());
  /* составленные акты: акт медосвидетельствования и прочие, указанные на шаге 3 */
  if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
  $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
@@ -703,6 +702,7 @@ const FULL_DIV={
  "Пр. база по изгот. металл. Цех №1":"Цех №1 производственной базы по изготовлению металлоконструкций",
  "Пр. база по изгот. металл. Цех АКЗ":"Цех АКЗ производственной базы по изготовлению металлоконструкций",
  "Произв. база по изгот. металлоконст.":"Производственная база по изготовлению металлоконструкций",
+ "Группа вспомогательных работ ПБ Цех №1":"Группа вспомогательных работ цеха №1 производственной базы",
  "Отдел производственно-тех. комплектации":"Отдел производственно-технической комплектации",
  "Группа по инф. технологиям":"Группа по информационным технологиям",
  "Группа по обучению и соц. политике":"Группа по обучению и социальной политике",
