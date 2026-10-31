@@ -172,13 +172,14 @@ details summary{font-size:14px;color:var(--muted)}
 <textarea id="fact" placeholder="Коротко: что видели, кто был рядом, что сделали"></textarea>
 <div class="pph" style="margin-top:14px"></div>
 <div id="medBox">
-<label>Проверяли алкотестером?</label>
+<label>Проводили медицинское освидетельствование?</label>
 <div class="pick" data-f="medQ"><button data-v="yes">Да</button><button data-v="no">Нет</button></div>
 <div id="medData">
 <div class="two">
-<div><label>Показания, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
+<div id="mgL"><label>Показания алкотестера, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
 <div><label>№ акта</label><input id="act"></div>
 </div>
+<div id="drugL"><label>Результат на наркотические (токсические) вещества</label><input id="drugRes" placeholder="как указано в акте"></div>
 <div class="two"><div><label>Дата акта</label><input id="actDate" type="date"></div><div><label>Листов в акте</label><input id="actPages" inputmode="numeric"></div></div>
 </div>
 </div>
@@ -361,7 +362,7 @@ const V=[
  {g:"alc",id:"drink",wh:"SZ",n:"Распивал спиртное на территории работодателя",t:["распивал алкогольные напитки на территории Работодателя","распивала алкогольные напитки на территории Работодателя"],pp:[],pv:["8.3"],pf:[],pl:[],med:1,h:"ПВТР 8.3 — запрет распивать алкогольные напитки"},
  {g:"alc",id:"bring",wh:"KS",n:"Пронёс спиртное на площадку",t:["пронёс алкогольные напитки на площадку строительства АЭС","пронесла алкогольные напитки на площадку строительства АЭС"],pp:[],pv:["15.9"],pf:[],pl:[],h:"ПВТР 15.9 — запрет проносить на площадку алкогольные напитки"},
  {g:"alc",id:"buy",wh:"ZOX",n:"Купил спиртное у местных жителей",t:["приобрёл спиртные напитки у местных жителей","приобрела спиртные напитки у местных жителей"],pp:["8.1.9"],pv:[],pf:[],pl:[],h:"ПП 8.1.9 — запрет приобретать спиртное у местных жителей"},
- {g:"alc",id:"drug",wh:"SZKBOX",n:"Признаки наркотиков",t:["находился с внешними признаками наркотического (токсического) опьянения","находилась с внешними признаками наркотического (токсического) опьянения"],pp:["8.1.10"],pv:["8.3"],pf:["19.5"],pl:[],h:"ПП 8.1.10 — незаконный оборот наркотиков; ПВТР 8.3 — запрет употреблять наркотические вещества; 19.5 (иностр.)"},
+ {g:"alc",id:"drug",wh:"SZKBOX",med:1,md:"d",n:"Признаки наркотиков",t:["находился с внешними признаками наркотического (токсического) опьянения","находилась с внешними признаками наркотического (токсического) опьянения"],pp:["8.1.10"],pv:["8.3"],pf:["19.5"],pl:[],h:"ПП 8.1.10 — незаконный оборот наркотиков; ПВТР 8.3 — запрет употреблять наркотические вещества; 19.5 (иностр.)"},
  {g:"fgt",id:"fight",wh:"SZKBOX",n:"Драка, ударил человека",t:["допустил агрессивные действия и рукоприкладство","допустила агрессивные действия и рукоприкладство"],pp:["9.2.1"],pv:["8.2"],pf:[],pl:["13.2.12"],h:"ПП 9.2.1 — запрет агрессивных действий и рукоприкладства; ПВТР 8.2 — способствовать благоприятному климату в коллективе; 13.2.12 — агрессивное поведение (местн.)"},
  {g:"fgt",id:"rude",wh:"SZKBOX",n:"Грубил, кричал, ругался матом",t:["допускал грубость, крик и нецензурные выражения при общении","допускала грубость, крик и нецензурные выражения при общении"],pp:["9.2.1"],pv:["8.2"],pf:[],pl:[],h:"ПП 9.2.1 — запрет грубости, крика, нецензурных выражений; ПВТР 8.2 — соблюдать правила делового этикета"},
  {g:"fgt",id:"locals",wh:"ZOX",n:"Конфликт или оскорбление местных жителей",t:["допустил недружественные проявления в отношении местных жителей","допустила недружественные проявления в отношении местных жителей"],pp:["8.1.1"],pv:[],pf:["19.2","19.3"],pl:[],h:"ПП 8.1.1 — такт и выдержка с местными жителями; ПВТР 19.2, 19.3 — уважение к обычаям, запрет провокационных действий (иностр.)"},
@@ -404,7 +405,7 @@ const TP={alcoW:"находились в рабочее время с внешн
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","drugRes","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 /* ===== НАРУШИТЕЛИ: в одной СЗ — один случай (дата, время, место общие), нарушителей — один или несколько;
@@ -517,6 +518,7 @@ function refresh(){
  $("otherBox").style.display=c.some(x=>x.id=="other")?"":"none";
  $("medBox").style.display=c.some(x=>x.med)?"":"none";
  $("medData").style.display=P.medQ=="yes"?"":"none";
+ $("mgL").style.display=c.some(x=>x.med&&!x.md)?"":"none";$("drugL").style.display=c.some(x=>x.md=="d")?"":"none";
  $("explL").style.display=P.expl=="yes"?"":"none";$("refL").style.display=P.expl=="ref"?"":"none";$("hodL").style.display=$("hod").checked?"":"none";
  $("mSet").style.display=P.mode=="set"?"":"none";
  $("mForeign").style.display=loc?"none":"";$("mLocal").style.display=loc?"":"none";
@@ -572,7 +574,7 @@ function pinfo(o,first){
  p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+p.base;
  p.key=c.map(x=>x.id).sort().join(",");
  p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
- p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
+ p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.alc=c.some(x=>x.med&&!x.md);p.drug=c.some(x=>x.md=="d");p.drugRes=vv("drugRes");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
  p.hod=!!o.f.hod;p.hodPages=fv("hodPages").trim();
  p.expl=o.p.expl;p.explPages=fv("explPages").trim();p.refDate=fv("refDate");p.refPages=fv("refPages").trim();
  let pp=[],pv=[];c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
@@ -607,11 +609,16 @@ function make(){
  const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
  /* медицинское освидетельствование */
  const M=ps.filter(p=>p.med);
+ /* предмет и результат: спиртные напитки (мг/л по анализатору) и/или наркотические (токсические) вещества (как в акте) */
+ const subj=a=>(a.some(p=>p.alc)?"спиртных напитков":"")+(a.some(p=>p.alc)&&a.some(p=>p.drug)?" и ":"")+(a.some(p=>p.drug)?"наркотических (токсических) веществ":"");
+ const res=p=>(p.alc?p.mg+" мг/л":"")+(p.alc&&p.drug?", на наркотические (токсические) вещества – ":"")+(p.drug?p.drugRes:"");
+ const anl=a=>a.some(p=>p.alc)?" в соответствии с показаниями анализатора":"";
  if(M.length==1){const p=M[0];
-  b+="\n\nС согласия работника "+p.g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+p.mg+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+p.act+" от "+dw(p.actDate)+" "+MEDACT+".";}
+  b+="\n\nС согласия работника "+p.g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления "+subj(M)+", результат которой "+
+   (p.alc?"составил "+p.mg+" мг/л"+anl(M)+(p.drug?", на наркотические (токсические) вещества – "+p.drugRes:""):"– "+p.drugRes)+". В присутствии комиссии составлен акт № "+p.act+" от "+dw(p.actDate)+" "+MEDACT+".";}
  else if(M.length>1){const same=M.every(p=>p.actDate==M[0].actDate);
-  b+="\n\nС согласия работников "+jn(M.map(p=>p.g))+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил: "+
-   M.map(p=>"у "+p.g+" – "+p.mg+" мг/л").join("; ")+" в соответствии с показаниями анализатора. В присутствии комиссии составлены акты "+
+  b+="\n\nС согласия работников "+jn(M.map(p=>p.g))+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления "+subj(M)+", результат которой составил: "+
+   M.map(p=>"у "+p.g+" – "+res(p)).join("; ")+anl(M)+". В присутствии комиссии составлены акты "+
    (same?M.map(p=>"№ "+p.act+" ("+sur(p)+")").join(", ")+" от "+dw(M[0].actDate):M.map(p=>"№ "+p.act+" от "+dw(p.actDate)+" ("+sur(p)+")").join(", "))+
    " нахождения работников (членов семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";}
  /* объяснения */
@@ -752,7 +759,8 @@ function check(st,first=true){
    if(x<dt){al("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){al("Дата акта "+nm+" позже сегодняшней");return false}return true};
   if(c.some(x=>x.med)&&P.medQ=="yes"&&!actD("actDate","медицинского освидетельствования"))return false;
   if(P.expl=="ref"&&!actD("refDate","об отказе от объяснений"))return false;
-  if(c.some(x=>x.med)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
+  if(c.some(x=>x.md=="d")&&P.medQ=="yes"&&!$("drugRes").value.trim()&&!askP("Не указан результат освидетельствования на наркотические (токсические) вещества. Продолжить без него?"))return false;
+  if(c.some(x=>x.med&&!x.md)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
    if(isNaN(mg)&&!askP("Не указаны показания алкотестера. Продолжить без них?"))return false;
    if(mg===0&&!askP("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
  }
