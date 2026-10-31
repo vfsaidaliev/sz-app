@@ -23,6 +23,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
@@ -64,6 +65,8 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         web.addJavascriptInterface(new Bridge(), "Android");
+        /* без WebChromeClient окна alert/confirm на телефоне не показываются, а confirm всегда возвращает «Отмена» */
+        web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView v, String url) {
