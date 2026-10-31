@@ -181,7 +181,8 @@ details summary{font-size:14px;color:var(--muted)}
 </div>
 <div id="drugB"><label>На наркотические (токсические) вещества</label>
 <div class="pick" data-f="drugR"><button data-v="yes">Прошёл</button><button data-v="ref">Отказался</button></div>
-<div id="drugL"><label>Результат</label><input id="drugRes" placeholder="как указано в акте"></div>
+<div id="drugL"><label>Результат</label>
+<div class="pick" data-f="drugV"><button data-v="pos">Положительный</button><button data-v="neg">Отрицательный</button></div></div>
 </div>
 <label>Акт (один на всё освидетельствование)</label>
 <div class="two"><div><label>№ акта</label><input id="act"></div><div></div></div>
@@ -410,15 +411,15 @@ const TP={alcoW:"находились в рабочее время с внешн
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","drugRes","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
-const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes"};
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
+const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes",drugV:""};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 /* ===== НАРУШИТЕЛИ: в одной СЗ — один случай (дата, время, место общие), нарушителей — один или несколько;
  у каждого свои данные, нарушения, алкотестер, объяснение и наказание. На экране — поля текущего (CUR),
  остальные хранятся в PS. */
 const CF=["date","time","place","fact","acts","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
-const PF=F.filter(x=>!CF.includes(x)),PK=["cat","sex","medQ","expl","mode","alcR","drugR"];
-const P0={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes"};
+const PF=F.filter(x=>!CF.includes(x)),PK=["cat","sex","medQ","expl","mode","alcR","drugR","drugV"];
+const P0={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes",drugV:""};
 let PS=[],CUR=0,PFX="";
 function emptyPerson(){return {f:{},p:Object.assign({},P0),manual:{},v:[]}}
 function readPerson(){const o={f:{},p:{},manual:Object.assign({},manual),v:chosen().map(x=>x.id)};PF.forEach(k=>o.f[k]=val(k));PK.forEach(k=>o.p[k]=P[k]);return o}
@@ -581,7 +582,7 @@ function pinfo(o,first){
  p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+p.base;
  p.key=c.map(x=>x.id).sort().join(",");
  p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
- p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.alc=c.some(x=>x.med&&!x.md);p.drug=c.some(x=>x.md=="d");p.drugRes=vv("drugRes");
+ p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.alc=c.some(x=>x.med&&!x.md);p.drug=c.some(x=>x.md=="d");p.drugRes=o.p.drugV=="pos"?"положительный":o.p.drugV=="neg"?"отрицательный":U;
  /* отказ от освидетельствования — отдельно по алкоголю и по наркотическим веществам; акт один */
  p.alcRef=p.alc&&o.p.alcR=="ref";p.drugRef=p.drug&&o.p.drugR=="ref";p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
  p.hod=!!o.f.hod;p.hodPages=fv("hodPages").trim();
@@ -774,7 +775,13 @@ function check(st,first=true){
    if(x<dt){al("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){al("Дата акта "+nm+" позже сегодняшней");return false}return true};
   if(c.some(x=>x.med)&&P.medQ=="yes"&&!actD("actDate","медицинского освидетельствования"))return false;
   if(P.expl=="ref"&&!actD("refDate","об отказе от объяснений"))return false;
-  if(c.some(x=>x.md=="d")&&P.medQ=="yes"&&P.drugR!="ref"&&!$("drugRes").value.trim()&&!askP("Не указан результат освидетельствования на наркотические (токсические) вещества. Продолжить без него?"))return false;
+  /* результат на наркотические вещества: положительный — нарушение подтверждено, отрицательный — нет */
+  if(c.some(x=>x.md=="d")&&P.medQ=="yes"&&P.drugR!="ref"){
+   if(!P.drugV){al("Выберите результат освидетельствования на наркотические (токсические) вещества: положительный или отрицательный");return false}
+   if(P.drugV=="neg"){const nm=V.find(x=>x.id=="drug").n;
+    if(confirm(PFX+"Результат на наркотические (токсические) вещества отрицательный — нарушение «"+nm+"» не подтверждено. Снять эту отметку?")){
+     $("v_drug").checked=false;refresh();save();
+     if(!chosen().length){al("Других нарушений не отмечено — служебная записка в отношении этого работника не требуется. Отметьте другие нарушения на шаге 1 или уберите его из записки.");step=1;refresh();return false}}}}
   if(c.some(x=>x.med&&!x.md)&&P.medQ=="yes"&&P.alcR!="ref"){const mg=parseFloat($("mg").value.replace(",","."));
    if(isNaN(mg)&&!askP("Не указаны показания алкотестера. Продолжить без них?"))return false;
    if(mg===0&&!askP("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
