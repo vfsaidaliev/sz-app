@@ -3,7 +3,8 @@
    абзацный отступ 1,25 см, одинарный интервал, шапка — таблица без рамок. */
 (function(){
 var TW=9921; /* ширина текста: 210 мм − 25 мм − 10 мм, в twips */
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+/* управляющие символы (вставленные копированием) недопустимы в XML документа; табуляция — пробел */
+function esc(s){return String(s).replace(/\t/g," ").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function r(t,u){return '<w:r>'+(u?'<w:rPr><w:u w:val="single"/></w:rPr>':'')+'<w:t xml:space="preserve">'+esc(t)+'</w:t></w:r>'}
 function tab(){return '<w:r><w:tab/></w:r>'}
 function p(runs,o){o=o||{};var pr='';

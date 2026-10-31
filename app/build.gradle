@@ -30,9 +30,14 @@ android {
             }
         }
     }
+    /* рабочая сборка — release (не отлаживаемая: данные приложения нельзя извлечь через ADB) */
     buildTypes {
         debug {
             if (ks.exists()) signingConfig signingConfigs.stable
+        }
+        release {
+            minifyEnabled false
+            signingConfig ks.exists() ? signingConfigs.stable : signingConfigs.debug
         }
     }
 

@@ -68,6 +68,12 @@ public class MainActivity extends Activity {
         /* без WebChromeClient окна alert/confirm на телефоне не показываются, а confirm всегда возвращает «Отмена» */
         web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient() {
+            /* только страницы приложения: внешние адреса внутри WebView (с доступом к Android-мосту) не открываются */
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                return !url.startsWith("file:///android_asset/");
+            }
+
             @Override
             public void onPageFinished(WebView v, String url) {
                 ready = true;

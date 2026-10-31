@@ -20,7 +20,7 @@ jobs:
       - name: Постоянный ключ подписи
         if: ${{ env.SIGNING_KEYSTORE != '' }}
         run: echo "$SIGNING_KEYSTORE" | base64 -d > app/sz.jks
-      - run: gradle assembleDebug
+      - run: gradle assembleRelease
       - name: Чем подписан APK
         run: |
           if [ -f app/sz.jks ]; then echo "постоянный ключ"
@@ -28,4 +28,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sz-app
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/release/*.apk
