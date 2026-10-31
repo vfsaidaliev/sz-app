@@ -974,14 +974,27 @@ function ckShow(i){
   kv("Табельный номер",tab)+kv("Должность",pos)+kv("Подразделение",div)+kv("Пол",sex=="m"?"мужской":sex=="f"?"женский":"")+
   kv("Дата рождения",dob?d(dob)+" ("+age(dob)+")":"")+kv("Гражданство",cit)+
   "<small class='h'>По базе от "+d(BASE.date)+"</small>"+
-  "<button onclick='ckSz("+i+")'>Составить СЗ на этого работника</button><button class='alt' onclick='ckBack()'>Назад к поиску</button>";
+  ckButtons(i)+"<button class='alt' onclick='ckBack()'>Назад к поиску</button>";
  $("ckList").style.display="none";$("ckCard").style.display="";$("cq").blur();window.scrollTo(0,0);$("ck").scrollTop=0}
 function ckBack(){$("ckCard").style.display="none";$("ckList").style.display="";$("cq").focus()}
 /* начать СЗ: данные работника — в шаг 2, сам мастер — с шага 1 */
-function ckSz(i){
- const draft=chosen().length||$("fioFull").value.trim()||PS.length>1||PH.length;
- if(draft){if(confirm("Добавить этого работника в текущую записку ещё одним нарушителем?\n\nОК — добавить, Отмена — начать новую записку"))addPerson();else clearAll(1)}
- pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
+/* кнопки карточки: если записка уже начата — «добавить в текущую» и «новая СЗ» отдельными кнопками, без вопросов */
+function ckButtons(i){
+ syncCur();const tab=BASE.rows[i][0],n=PS.length;
+ const draft=PS.some(o=>o.v.length||String(o.f.fioFull||"").trim())||PH.length;
+ const at=PS.findIndex(o=>String(o.f.tab||"").trim()==tab);
+ if(!draft)return "<button onclick='ckNew("+i+")'>Составить СЗ на этого работника</button>";
+ if(at>=0)return "<div class='sum'>Этот работник уже есть в текущей записке — нарушитель "+(at+1)+".</div><button onclick='ckOpen("+at+")'>Открыть его в записке</button><button class='alt' onclick='ckNew("+i+")'>Начать новую СЗ на этого работника</button>";
+ const empty=!PS[n-1].v.length&&!String(PS[n-1].f.fioFull||"").trim();
+ return "<button onclick='ckAdd("+i+")'>＋ Добавить в текущую СЗ (нарушитель "+(empty?n:n+1)+")</button><button class='alt' onclick='ckNew("+i+")'>Начать новую СЗ на этого работника</button>";
+}
+/* добавить нарушителем в текущую записку: в пустую карточку нарушителя, иначе — новым */
+function ckAdd(i){const o=PS[PS.length-1];if(o.v.length||String(o.f.fioFull||"").trim())addPerson();else showPerson(PS.length-1,1);
+ pickRow(i);closeCheck();step=1;openG="";refresh();save();window.scrollTo(0,0)}
+function ckNew(i){const draft=PS.some(o=>o.v.length||String(o.f.fioFull||"").trim())||PH.length;
+ if(draft&&!confirm("Начать новую записку? Текущий черновик будет удалён."))return;
+ clearAll(1);pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
+function ckOpen(k){closeCheck();showPerson(k,1);step=2;refresh();save();window.scrollTo(0,0)}
 function openSearch(){$("sp").style.display="";$("q").value="";search();$("q").focus()}
 function closeSearch(){$("sp").style.display="none";$("q").blur()}
 function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-1]||"";
