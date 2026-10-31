@@ -29,15 +29,33 @@ function build(z){
  if(z.att.length){z.att.forEach(function(s){T+=p(r(s),{})});T+=p("",{})+p("",{})}
  T+=p(r(z.sign[0])+tab()+r(z.sign[1]),{jc:"left",tab:1})+p("",{})+p("",{})+p("",{});
  z.exec.forEach(function(s){T+=p(r(s),{jc:"left"})});
+ var F=z.photos&&z.photos.length?photoTable(z):"";
  var sect='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="567" w:bottom="1134" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr>';
- return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+tbl+B+T+sect+'</w:body></w:document>';
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'+(F?NS:'')+'><w:body>'+tbl+B+T+F+sect+'</w:body></w:document>';
+}
+/* ---- фототаблица: с новой страницы, по 2 фото на лист, подпись «Фото N. …» ---- */
+var NS=' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+var PER=2,MW=16*360000,MH=10.5*360000; /* фото на лист; наибольший размер фото, EMU (16 × 10,5 см) */
+function img(ph,n){
+ var k=Math.min(MW/ph.w,MH/ph.h),cx=Math.round(ph.w*k),cy=Math.round(ph.h*k);
+ return '<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+n+'" name="Фото '+n+'"/>'+
+  '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+  '<pic:pic><pic:nvPicPr><pic:cNvPr id="'+n+'" name="photo'+n+'.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdP'+n+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
+  '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>'}
+function photoTable(z){
+ var C={jc:"center"},o='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+p(r("ФОТОТАБЛИЦА"),C)+p(r("к служебной записке от "+z.date+" № "+z.num),C)+p("",C);
+ z.photos.forEach(function(ph,i){
+  if(i&&i%PER==0)o+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  o+=img(ph,i+1)+p(r("Фото "+(i+1)+(ph.cap?". "+ph.cap.replace(/\.$/,""):"")),C)+p("",C);
+ });
+ return o;
 }
 var STY='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
  '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="28"/><w:szCs w:val="28"/><w:lang w:val="ru-RU" w:eastAsia="ru-RU" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>'+
  '<w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'+
  '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'+
  '<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>';
-var CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+var CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
 var RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
 var DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
 /* ---- ZIP без сжатия ---- */
@@ -48,7 +66,7 @@ function zip(files){
  var out=[],cen=[],off=0,dt=new Date(),tm=(dt.getHours()<<11)|(dt.getMinutes()<<5)|(dt.getSeconds()>>1),dd=((dt.getFullYear()-1980)<<9)|((dt.getMonth()+1)<<5)|dt.getDate();
  function h(n,l){var a=[];for(var i=0;i<l;i++){a.push(n&255);n=Math.floor(n/256)}return a}
  files.forEach(function(f){
-  var nm=utf8(f[0]),d=utf8(f[1]),c=crc(d);
+  var nm=utf8(f[0]),d=typeof f[1]=="string"?utf8(f[1]):f[1],c=crc(d);
   var lh=[].concat(h(0x04034b50,4),h(20,2),h(0,2),h(0,2),h(tm,2),h(dd,2),h(c,4),h(d.length,4),h(d.length,4),h(nm.length,2),h(0,2));
   out.push(new Uint8Array(lh),nm,d);
   cen.push(new Uint8Array([].concat(h(0x02014b50,4),h(20,2),h(20,2),h(0,2),h(0,2),h(tm,2),h(dd,2),h(c,4),h(d.length,4),h(d.length,4),h(nm.length,2),h(0,2),h(0,2),h(0,2),h(0,2),h(0,4),h(off,4))),nm);
@@ -60,7 +78,14 @@ function zip(files){
  var res=new Uint8Array(len),pos=0;all.forEach(function(x){res.set(x,pos);pos+=x.length});return res;
 }
 function b64(a){var s="";for(var i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s)}
+/* z.photos — [{w,h,b (base64 JPEG),cap}] для фототаблицы */
 window.makeDocx=function(z){
- return b64(zip([["[Content_Types].xml",CT],["_rels/.rels",RELS],["word/document.xml",build(z)],["word/styles.xml",STY],["word/_rels/document.xml.rels",DRELS]]));
+ var ph=z.photos||[],rels=DRELS,files=[["[Content_Types].xml",CT],["_rels/.rels",RELS],["word/document.xml",build(z)],["word/styles.xml",STY]];
+ if(ph.length){
+  rels=DRELS.replace("</Relationships>",ph.map(function(x,i){return '<Relationship Id="rIdP'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/photo'+(i+1)+'.jpeg"/>'}).join("")+"</Relationships>");
+  ph.forEach(function(x,i){var s=atob(x.b),a=new Uint8Array(s.length);for(var k=0;k<s.length;k++)a[k]=s.charCodeAt(k);files.push(["word/media/photo"+(i+1)+".jpeg",a])});
+ }
+ files.push(["word/_rels/document.xml.rels",rels]);
+ return b64(zip(files));
 };
 })();

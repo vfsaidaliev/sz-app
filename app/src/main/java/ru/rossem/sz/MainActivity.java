@@ -353,6 +353,30 @@ public class MainActivity extends Activity {
             return Photos.thumb(MainActivity.this, id);
         }
 
+        /* фото для фототаблицы: {"w":ширина,"h":высота,"b":"base64 JPEG"} или "" */
+        @JavascriptInterface
+        public String photoData(String id) {
+            File f = Photos.file(MainActivity.this, id);
+            if (f == null || !f.exists()) return "";
+            try {
+                android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+                o.inJustDecodeBounds = true;
+                android.graphics.BitmapFactory.decodeFile(f.getPath(), o);
+                byte[] b = new byte[(int) f.length()];
+                FileInputStream in = new FileInputStream(f);
+                int n = 0;
+                while (n < b.length) {
+                    int k = in.read(b, n, b.length - n);
+                    if (k < 0) break;
+                    n += k;
+                }
+                in.close();
+                return "{\"w\":" + o.outWidth + ",\"h\":" + o.outHeight + ",\"b\":\"" + Base64.encodeToString(b, 0, n, Base64.NO_WRAP) + "\"}";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
         @JavascriptInterface
         public void photoDelete(String id) {
             File f = Photos.file(MainActivity.this, id);

@@ -79,10 +79,11 @@ pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px so
 .kv{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}.kv:last-of-type{border-bottom:0}
 .kv span{flex:0 0 38%;color:var(--muted)}.kv b{flex:1;font-weight:500}
 .ckname{font-size:20px;font-weight:600;margin:2px 0 2px}.ckcat{display:inline-block;font-size:12px;padding:3px 10px;border-radius:12px;background:var(--sel);color:var(--accent);margin-bottom:8px}
-.ph{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.ph:empty{display:none}
-.ph div{position:relative}.ph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block;background:var(--chip)}
-.ph button{position:absolute;top:4px;right:4px;width:28px;height:28px;padding:0;margin:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:14px}
-.ph span{position:absolute;left:6px;bottom:4px;font-size:12px;color:#fff;text-shadow:0 0 3px #000}
+.ph{margin-top:8px}.ph:empty{display:none}
+.ph>div{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.ph>div:last-child{border-bottom:0}
+.ph img{width:72px;height:72px;flex:none;object-fit:cover;border-radius:10px;display:block;background:var(--chip)}
+.ph .pc{flex:1;min-width:0}.ph .pc b{display:block;font-size:14px;margin-bottom:4px}.ph .pc input{padding:9px;font-size:14px}
+.ph button{width:36px;height:36px;flex:none;padding:0;margin:0;border-radius:50%;background:var(--chip);color:var(--text);font-size:15px}
 details summary{font-size:14px;color:var(--muted)}
 </style>
 </head>
@@ -179,7 +180,7 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Фото (доказательства)</label>
 <div id="phBtns" class="two"><button class="alt" onclick="Android.photoCamera()">📷 Снять фото</button><button class="alt" onclick="Android.photoGallery()">🖼 Из галереи</button></div>
 <div id="phList" class="ph"></div>
-<small class="h" id="phHint">Фото будут приложены к письму, а в «Приложениях» служебной записки появится строка «Фотоматериалы».</small>
+<small class="h" id="phHint">Фото войдут в фототаблицу в конце служебной записки (по 2 на лист), в «Приложениях» появится строка «Фототаблица». Описание к фото — необязательно.</small>
 </div>
 
 <!-- ШАГ 4 -->
@@ -362,7 +363,7 @@ const MON=["января","февраля","марта","апреля","мая",
 const $=id=>document.getElementById(id);
 const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actPages","explPages","acts","who","wtel","now","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",wsex:"m",mode:"sb"};
-let step=1,openG="",manual={},SZ=null,PH=[];
+let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 const N=6;
 function val(id){const e=$(id);return e.type=="checkbox"?e.checked:e.value}
 function setv(id,x){const e=$(id);if(e.type=="checkbox")e.checked=!!x;else e.value=x}
@@ -453,11 +454,11 @@ function go(k){
  }
  step=Math.min(N,Math.max(1,step+k));if(step==N)make();refresh();save();window.scrollTo(0,0)
 }
-function save(){const o={P:P,manual:manual,v:chosen().map(x=>x.id),ph:PH};F.forEach(f=>o[f]=val(f));localStorage.setItem("sz3",JSON.stringify(o))}
+function save(){const o={P:P,manual:manual,v:chosen().map(x=>x.id),ph:PH,pc:PC};F.forEach(f=>o[f]=val(f));localStorage.setItem("sz3",JSON.stringify(o))}
 function load(){let o={};try{o=JSON.parse(localStorage.getItem("sz3")||"{}")}catch(e){}
  F.forEach(f=>{if(o[f]!==undefined)setv(f,o[f])});Object.assign(P,o.P||{});manual=o.manual||{};
  (o.v||[]).forEach(id=>{const e=$("v_"+id);if(e)e.checked=true});
- PH=Array.isArray(o.ph)?o.ph:[];
+ PH=Array.isArray(o.ph)?o.ph:[];PC=o.pc||{};
  if(!$("date").value)$("date").value=today();if(!$("szdate").value)$("szdate").value=today()}
 function measure(){
  if(P.cat=="local"){const m=$("locm").value;return m?{d:m,ext:[]}:null}
@@ -508,10 +509,10 @@ function make(){
  /* составленные акты: акт медосвидетельствования и прочие, указанные на шаге 3 */
  if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("date").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
  $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
- /* фото-доказательства прикладываются к письму в электронном виде */
- if(PH.length)lines.push("\u0001Фотоматериалы в электронном виде, "+PH.length+" шт.");
+ /* фото-доказательства — фототаблицей в конце DOCX, по 2 фото на лист */
+ if(PH.length)lines.push("Фототаблица ; "+Math.ceil(PH.length/2));
  $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
- const one=s=>{if(s.charAt(0)=="\u0001")return s.slice(1);const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
+ const one=s=>{const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
  let att=[];
  if(lines.length==1)att=["Приложение: "+one(lines[0])];
  else if(lines.length>1)att=["Приложения:"].concat(lines.map((s,i)=>(i+1)+". "+one(s)+(i<lines.length-1?";":".")));
@@ -530,7 +531,7 @@ function make(){
 function letter(withText){
  const t=make();
  return "Сообщение о нарушении\n\nВыявил"+(P.wsex=="f"?"а":"")+": "+v("who")+"\nТелефон: "+v("wtel","не указан")+"\nГде нарушитель сейчас: "+v("now","не указано")+
-  (withText?"\n\nПроект служебной записки:\n\n"+t:"\n\nСлужебная записка"+(PH.length?" и фотоматериалы ("+PH.length+" шт.)":"")+" во вложении.");
+  (withText?"\n\nПроект служебной записки:\n\n"+t:"\n\nСлужебная записка"+(PH.length?" с фототаблицей":"")+" во вложении.");
 }
 function sendMail(){
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
@@ -539,7 +540,8 @@ function sendMail(){
  if(window.Android&&Android.emailDocx){
   const body=letter(false);
   const fn=("СЗ "+v("fioN")+" "+d($("date").value)).replace(/[\\\/:*?"<>|\[\]]/g,"").replace(/\s+/g,"_")+".docx";
-  Android.emailDocx(to,subj,body,fn,makeDocx(SZ),JSON.stringify(PH));return}
+  const photos=PH.map(id=>{let o={};try{o=JSON.parse(Android.photoData(id))}catch(e){}o.cap=(PC[id]||"").trim();return o}).filter(o=>o.b);
+  Android.emailDocx(to,subj,body,fn,makeDocx(Object.assign({},SZ,{photos:photos})),"[]");return}
  const body=letter(true);
  if(window.Android&&Android.email)Android.email(to,subj,body);
  else if(window.Android)Android.share(subj+"\n\n"+body);
@@ -556,10 +558,10 @@ function phRender(){
  $("phBtns").style.display=ok?"":"none";
  if(!ok){$("phHint").textContent="Добавление фото доступно в приложении на телефоне.";$("phList").innerHTML="";return}
  PH=PH.filter(id=>(TH[id]=TH[id]||Android.photoThumb(id)));
- $("phList").innerHTML=PH.map((id,i)=>"<div><img src='"+TH[id]+"' alt=''><span>"+(i+1)+"</span><button onclick='phDel("+i+")' aria-label='Удалить'>✕</button></div>").join("");
+ $("phList").innerHTML=PH.map((id,i)=>"<div><img src='"+TH[id]+"' alt=''><div class='pc'><b>Фото "+(i+1)+"</b><input placeholder='описание (необязательно)' value=\""+esc(PC[id]||"")+"\" oninput='PC[\""+id+"\"]=this.value;save()'></div><button onclick='phDel("+i+")' aria-label='Удалить'>✕</button></div>").join("");
 }
 function photoAdded(ids,err){PH=PH.concat(ids||[]);phRender();save();if(err)alert(err)}
-function phDel(i){if(!confirm("Удалить фото "+(i+1)+"?"))return;const id=PH.splice(i,1)[0];if(Android.photoDelete)Android.photoDelete(id);delete TH[id];phRender();save()}
+function phDel(i){if(!confirm("Удалить фото "+(i+1)+"?"))return;const id=PH.splice(i,1)[0];if(Android.photoDelete)Android.photoDelete(id);delete TH[id];delete PC[id];phRender();save()}
 /* системная кнопка «Назад»: шаг назад; false — закрыть приложение */
 function back(){if($("ck").style.display==""){if($("ckCard").style.display==""){ckBack();return true}closeCheck();return true}if($("st").style.display==""){closeSettings();return true}if($("sp").style.display==""){closeSearch();return true}if(step>1){go(-1);return true}return false}
 function clearAll(){if(!confirm("Начать новую записку? Всё введённое будет удалено."))return;
@@ -568,7 +570,7 @@ function clearAll(){if(!confirm("Начать новую записку? Всё 
  Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",wsex:keep.wsex});manual={};
  ["mailTo","who","wtel","sign"].forEach(k=>setv(k,keep[k]));
  closeSearch();$("fioRes").style.display="none";
- PH=[];if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
+ PH=[];PC={};if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
  $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
 /* ===== БАЗА РАБОТНИКОВ (файл Excel из учётной системы, с любым именем и порядком колонок) =====
  колонка для каждого поля определяется по заголовку и по содержимому, затем проверяется
