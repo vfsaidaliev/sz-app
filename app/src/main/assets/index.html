@@ -175,11 +175,16 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Проводили медицинское освидетельствование?</label>
 <div class="pick" data-f="medQ"><button data-v="yes">Да</button><button data-v="no">Нет</button></div>
 <div id="medData">
-<div class="two">
+<div id="alcB"><label>Алкотестер</label>
+<div class="pick" data-f="alcR"><button data-v="yes">Прошёл</button><button data-v="ref">Отказался</button></div>
 <div id="mgL"><label>Показания алкотестера, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
-<div><label>№ акта</label><input id="act"></div>
 </div>
-<div id="drugL"><label>Результат на наркотические (токсические) вещества</label><input id="drugRes" placeholder="как указано в акте"></div>
+<div id="drugB"><label>На наркотические (токсические) вещества</label>
+<div class="pick" data-f="drugR"><button data-v="yes">Прошёл</button><button data-v="ref">Отказался</button></div>
+<div id="drugL"><label>Результат</label><input id="drugRes" placeholder="как указано в акте"></div>
+</div>
+<label>Акт (один на всё освидетельствование)</label>
+<div class="two"><div><label>№ акта</label><input id="act"></div><div></div></div>
 <div class="two"><div><label>Дата акта</label><input id="actDate" type="date"></div><div><label>Листов в акте</label><input id="actPages" inputmode="numeric"></div></div>
 </div>
 </div>
@@ -406,14 +411,14 @@ const TP={alcoW:"находились в рабочее время с внешн
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
 const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","drugRes","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
-const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
+const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 /* ===== НАРУШИТЕЛИ: в одной СЗ — один случай (дата, время, место общие), нарушителей — один или несколько;
  у каждого свои данные, нарушения, алкотестер, объяснение и наказание. На экране — поля текущего (CUR),
  остальные хранятся в PS. */
 const CF=["date","time","place","fact","acts","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
-const PF=F.filter(x=>!CF.includes(x)),PK=["cat","sex","medQ","expl","mode"];
-const P0={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
+const PF=F.filter(x=>!CF.includes(x)),PK=["cat","sex","medQ","expl","mode","alcR","drugR"];
+const P0={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb",alcR:"yes",drugR:"yes"};
 let PS=[],CUR=0,PFX="";
 function emptyPerson(){return {f:{},p:Object.assign({},P0),manual:{},v:[]}}
 function readPerson(){const o={f:{},p:{},manual:Object.assign({},manual),v:chosen().map(x=>x.id)};PF.forEach(k=>o.f[k]=val(k));PK.forEach(k=>o.p[k]=P[k]);return o}
@@ -518,7 +523,9 @@ function refresh(){
  $("otherBox").style.display=c.some(x=>x.id=="other")?"":"none";
  $("medBox").style.display=c.some(x=>x.med)?"":"none";
  $("medData").style.display=P.medQ=="yes"?"":"none";
- $("mgL").style.display=c.some(x=>x.med&&!x.md)?"":"none";$("drugL").style.display=c.some(x=>x.md=="d")?"":"none";
+ const hasA=c.some(x=>x.med&&!x.md),hasD=c.some(x=>x.md=="d");
+ $("alcB").style.display=hasA?"":"none";$("mgL").style.display=P.alcR=="ref"?"none":"";
+ $("drugB").style.display=hasD?"":"none";$("drugL").style.display=P.drugR=="ref"?"none":"";
  $("explL").style.display=P.expl=="yes"?"":"none";$("refL").style.display=P.expl=="ref"?"":"none";$("hodL").style.display=$("hod").checked?"":"none";
  $("mSet").style.display=P.mode=="set"?"":"none";
  $("mForeign").style.display=loc?"none":"";$("mLocal").style.display=loc?"":"none";
@@ -574,7 +581,9 @@ function pinfo(o,first){
  p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+p.base;
  p.key=c.map(x=>x.id).sort().join(",");
  p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
- p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.alc=c.some(x=>x.med&&!x.md);p.drug=c.some(x=>x.md=="d");p.drugRes=vv("drugRes");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
+ p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.alc=c.some(x=>x.med&&!x.md);p.drug=c.some(x=>x.md=="d");p.drugRes=vv("drugRes");
+ /* отказ от освидетельствования — отдельно по алкоголю и по наркотическим веществам; акт один */
+ p.alcRef=p.alc&&o.p.alcR=="ref";p.drugRef=p.drug&&o.p.drugR=="ref";p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
  p.hod=!!o.f.hod;p.hodPages=fv("hodPages").trim();
  p.expl=o.p.expl;p.explPages=fv("explPages").trim();p.refDate=fv("refDate");p.refPages=fv("refPages").trim();
  let pp=[],pv=[];c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
@@ -613,9 +622,15 @@ function make(){
  const subj=a=>(a.some(p=>p.alc)?"спиртных напитков":"")+(a.some(p=>p.alc)&&a.some(p=>p.drug)?" и ":"")+(a.some(p=>p.drug)?"наркотических (токсических) веществ":"");
  const res=p=>(p.alc?p.mg+" мг/л":"")+(p.alc&&p.drug?", на наркотические (токсические) вещества – ":"")+(p.drug?p.drugRes:"");
  const anl=a=>a.some(p=>p.alc)?" в соответствии с показаниями анализатора":"";
- if(M.length==1){const p=M[0];
-  b+="\n\nС согласия работника "+p.g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления "+subj(M)+", результат которой "+
-   (p.alc?"составил "+p.mg+" мг/л"+anl(M)+(p.drug?", на наркотические (токсические) вещества – "+p.drugRes:""):"– "+p.drugRes)+". В присутствии комиссии составлен акт № "+p.act+" от "+dw(p.actDate)+" "+MEDACT+".";}
+ /* абзац об освидетельствовании одного нарушителя: что прошёл, от чего отказался, акт */
+ const medOne=p=>{const tA=p.alc&&!p.alcRef,tD=p.drug&&!p.drugRef,rA=p.alcRef,rD=p.drugRef;let t="";
+  if(tA||tD)t+="С согласия работника "+p.g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления "+
+   (tA?"спиртных напитков":"")+(tA&&tD?" и ":"")+(tD?"наркотических (токсических) веществ":"")+", результат которой "+
+   (tA?"составил "+p.mg+" мг/л в соответствии с показаниями анализатора"+(tD?", на наркотические (токсические) вещества – "+p.drugRes:""):"– "+p.drugRes)+". ";
+  if(rA||rD)t+="От прохождения медицинского освидетельствования на факт употребления "+(rA?"спиртных напитков":"")+(rA&&rD?" и ":"")+(rD?"наркотических (токсических) веществ":"")+
+   " "+p.n+(p.f?" отказалась":" отказался")+". ";
+  return t+"В присутствии комиссии составлен акт № "+p.act+" от "+dw(p.actDate)+" "+MEDACT+"."};
+ if(M.length==1||M.some(p=>p.alcRef||p.drugRef))M.forEach(p=>b+="\n\n"+medOne(p));
  else if(M.length>1){const same=M.every(p=>p.actDate==M[0].actDate);
   b+="\n\nС согласия работников "+jn(M.map(p=>p.g))+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления "+subj(M)+", результат которой составил: "+
    M.map(p=>"у "+p.g+" – "+res(p)).join("; ")+anl(M)+". В присутствии комиссии составлены акты "+
@@ -759,8 +774,8 @@ function check(st,first=true){
    if(x<dt){al("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){al("Дата акта "+nm+" позже сегодняшней");return false}return true};
   if(c.some(x=>x.med)&&P.medQ=="yes"&&!actD("actDate","медицинского освидетельствования"))return false;
   if(P.expl=="ref"&&!actD("refDate","об отказе от объяснений"))return false;
-  if(c.some(x=>x.md=="d")&&P.medQ=="yes"&&!$("drugRes").value.trim()&&!askP("Не указан результат освидетельствования на наркотические (токсические) вещества. Продолжить без него?"))return false;
-  if(c.some(x=>x.med&&!x.md)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
+  if(c.some(x=>x.md=="d")&&P.medQ=="yes"&&P.drugR!="ref"&&!$("drugRes").value.trim()&&!askP("Не указан результат освидетельствования на наркотические (токсические) вещества. Продолжить без него?"))return false;
+  if(c.some(x=>x.med&&!x.md)&&P.medQ=="yes"&&P.alcR!="ref"){const mg=parseFloat($("mg").value.replace(",","."));
    if(isNaN(mg)&&!askP("Не указаны показания алкотестера. Продолжить без них?"))return false;
    if(mg===0&&!askP("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
  }
