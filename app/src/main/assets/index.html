@@ -84,6 +84,10 @@ pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px so
 .ph img{width:72px;height:72px;flex:none;object-fit:cover;border-radius:10px;display:block;background:var(--chip)}
 .ph .pc{flex:1;min-width:0}.ph .pc b{display:block;font-size:14px;margin-bottom:4px}.ph .pc input{padding:9px;font-size:14px}
 .ph button{width:36px;height:36px;flex:none;padding:0;margin:0;border-radius:50%;background:var(--chip);color:var(--text);font-size:15px}
+.psbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.psbar:empty{display:none}
+.psbar button{width:auto;margin:0;padding:8px 12px;font-size:14px;border-radius:16px;background:var(--field);color:var(--text);border:1px solid var(--field-b)}
+.psbar button.on{border-color:var(--accent);background:var(--sel);font-weight:600}.psbar button.add{background:var(--chip);border-style:dashed}
+.pph{font-size:14px;color:var(--accent);font-weight:600;margin:-6px 0 8px}.pph:empty{display:none}
 details summary{font-size:14px;color:var(--muted)}
 </style>
 </head>
@@ -91,11 +95,12 @@ details summary{font-size:14px;color:var(--muted)}
 <div class="top"><button class="gear chk" id="bChk" onclick="openCheck()" aria-label="Проверка работника">🔍</button><button class="gear" onclick="openSettings()" aria-label="Настройки">⚙</button><div class="brand"><img src="data:image/webp;base64,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" alt=""><div><b>ТРЕСТ РОССЭМ</b><span>РОСАТОМ</span></div></div>
 <h1>Служебная записка о нарушении</h1>
 <div class="prog" id="prog"></div></div>
+<div id="psBar" class="psbar"></div>
 
 <!-- ШАГ 1 -->
 <div class="step" id="s1">
 <button class="alt" id="bChk1" onclick="openCheck()" style="display:none;margin:0 0 12px">🔍 Проверить работника по базе</button>
-<h2>1. Что случилось?</h2>
+<h2>1. Что случилось?</h2><div class="pph"></div>
 <div class="hint">Нажмите на подходящую группу и отметьте, что именно произошло. Можно отметить несколько.</div>
 <div id="groups"></div>
 <div id="otherBox" style="display:none">
@@ -107,7 +112,7 @@ details summary{font-size:14px;color:var(--muted)}
 
 <!-- ШАГ 2 -->
 <div class="step" id="s2">
-<h2>2. Кто нарушил?</h2>
+<h2>2. Кто нарушил?</h2><div class="pph"></div>
 <div id="dbBox" style="display:none">
 <button onclick="openSearch()">🔍 Найти работника в базе</button>
 <div class="dbline" id="dbLine"></div>
@@ -162,6 +167,7 @@ details summary{font-size:14px;color:var(--muted)}
 </div>
 <label>Что произошло подробнее (необязательно)</label>
 <textarea id="fact" placeholder="Коротко: что видели, кто был рядом, что сделали"></textarea>
+<div class="pph" style="margin-top:14px"></div>
 <div id="medBox">
 <label>Проверяли алкотестером?</label>
 <div class="pick" data-f="medQ"><button data-v="yes">Да</button><button data-v="no">Нет</button></div>
@@ -191,7 +197,7 @@ details summary{font-size:14px;color:var(--muted)}
 
 <!-- ШАГ 4 -->
 <div class="step" id="s4">
-<h2>4. Какое наказание предложить?</h2>
+<h2>4. Какое наказание предложить?</h2><div class="pph"></div>
 <div class="pick" data-f="mode"><button data-v="sb">Решит блок безопасности</button><button data-v="set">Выбрать самому</button></div>
 <div id="mSet">
 <div id="mForeign">
@@ -375,6 +381,33 @@ const $=id=>document.getElementById(id);
 const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
+/* ===== НАРУШИТЕЛИ: в одной СЗ — один случай (дата, время, место общие), нарушителей — один или несколько;
+ у каждого свои данные, нарушения, алкотестер, объяснение и наказание. На экране — поля текущего (CUR),
+ остальные хранятся в PS. */
+const CF=["date","time","place","fact","acts","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
+const PF=F.filter(x=>!CF.includes(x)),PK=["cat","sex","medQ","expl","mode"];
+const P0={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
+let PS=[],CUR=0,PFX="";
+function emptyPerson(){return {f:{},p:Object.assign({},P0),manual:{},v:[]}}
+function readPerson(){const o={f:{},p:{},manual:Object.assign({},manual),v:chosen().map(x=>x.id)};PF.forEach(k=>o.f[k]=val(k));PK.forEach(k=>o.p[k]=P[k]);return o}
+function writePerson(o){PF.forEach(k=>setv(k,o.f[k]!=null?o.f[k]:($(k).type=="checkbox"?false:"")));Object.assign(P,P0,o.p);manual=Object.assign({},o.manual);
+ V.forEach(x=>$("v_"+x.id).checked=o.v.includes(x.id))}
+function syncCur(){if(PS.length)PS[CUR]=readPerson()}
+function showPerson(i,quiet){syncCur();CUR=i;writePerson(PS[i]);$("fioRes").style.display="none";if(!quiet){refresh();save();window.scrollTo(0,0)}}
+function addPerson(){syncCur();PS.push(emptyPerson());showPerson(PS.length-1,1);step=1;openG="";refresh();save();window.scrollTo(0,0)}
+function delPerson(i){if(PS.length<2)return;const nm=PS[i].f.fioN||("нарушителя "+(i+1));
+ if(!confirm("Убрать из записки "+nm+"?"))return;syncCur();PS.splice(i,1);CUR=Math.min(CUR>i?CUR-1:CUR,PS.length-1);writePerson(PS[CUR]);refresh();save()}
+function pname(o,i){return (o.f.fioN||"").trim()||"Нарушитель "+(i+1)}
+/* нарушения всех нарушителей (для общего места) */
+function allChosen(){return PS.flatMap((o,i)=>i==CUR?chosen():o.v.map(id=>V.find(x=>x.id==id)).filter(Boolean))}
+function psBar(){
+ const on=step<N;$("psBar").style.display=on?"":"none";if(!on)return;
+ const multi=PS.length>1,cn=$("fioN").value.trim();
+ $("psBar").innerHTML=PS.map((o,i)=>"<button class='"+(i==CUR?"on":"")+"' onclick='showPerson("+i+")'>"+(i+1)+". "+esc(i==CUR?(cn||"Нарушитель "+(i+1)):pname(o,i))+
+  (multi&&i==CUR?" <span onclick='event.stopPropagation();delPerson("+i+")' aria-label='Убрать'>✕</span>":"")+"</button>").join("")+
+  "<button class='add' onclick='addPerson()'>＋ Нарушитель</button>";
+ document.querySelectorAll(".pph").forEach(e=>e.textContent=multi?"Нарушитель "+(CUR+1)+(cn?": "+cn:""):"");
+}
 const N=5;
 function val(id){const e=$(id);return e.type=="checkbox"?e.checked:e.value}
 function setv(id,x){const e=$(id);if(e.type=="checkbox")e.checked=!!x;else e.value=x}
@@ -436,7 +469,7 @@ function build(){
 function tg(id){openG=openG==id?"":id;refresh()}
 function pc(k){$("place").value=PLACES[k];$("place").focus();save()}
 /* допустимые места для отмеченных нарушений: общее для всех; "" — место не указывается; null — общего места нет */
-function places(){const c=chosen().map(x=>x.wh).filter(p=>p!="-");if(!c.length)return "";
+function places(){const c=allChosen().map(x=>x.wh).filter(p=>p!="-");if(!c.length)return "";
  const r=[..."SZKBOX"].filter(k=>c.every(p=>p.includes(k))).join("");return r||null}
 /* ключи кнопок для набора мест: X — все варианты «за пределами» */
 function keys(a){return [...a].flatMap(k=>k=="X"?["X","X2","X3","X4"]:[k])}
@@ -447,7 +480,7 @@ function chips(){const a=places()||"",ks=keys(a);
  const pv=$("place").value;if(Object.keys(PLACES).some(k=>!ks.includes(k)&&pv.startsWith(PLACES[k].trim())))$("place").value="";
  if(ks.length==1&&!$("place").value.trim())$("place").value=PLACES[ks[0]];}
 function refresh(){
- chips();execLine();
+ chips();execLine();psBar();
  G.forEach(g=>{const n=V.filter(x=>x.g==g.id&&$("v_"+x.id).checked).length;
   $("c_"+g.id).textContent=n?"("+n+")":"";$("g_"+g.id).classList.toggle("on",n>0||openG==g.id);
   $("i_"+g.id).style.display=openG==g.id?"":"none"});
@@ -467,22 +500,26 @@ function refresh(){
  $("bNext").style.display=step<N?"":"none";
 }
 function go(k){
- if(k>0&&!check(step))return;
+ if(k>0&&!checkAll(step))return;
  step=Math.min(N,Math.max(1,step+k));if(step==N)make();refresh();save();window.scrollTo(0,0)
 }
-function save(){const o={P:P,manual:manual,v:chosen().map(x=>x.id),ph:PH,pc:PC};F.forEach(f=>o[f]=val(f));localStorage.setItem("sz3",JSON.stringify(o))}
+function save(){syncCur();const c={};CF.forEach(k=>c[k]=val(k));
+ try{localStorage.setItem("sz3",JSON.stringify({ver:2,ps:PS,cur:CUR,c:c,ph:PH,pc:PC}))}catch(e){}}
 function load(){let o={};try{o=JSON.parse(localStorage.getItem("sz3")||"{}")}catch(e){}
- F.forEach(f=>{if(o[f]!==undefined)setv(f,o[f])});Object.assign(P,o.P||{});manual=o.manual||{};
- (o.v||[]).forEach(id=>{const e=$("v_"+id);if(e)e.checked=true});
+ if(o.ver==2&&Array.isArray(o.ps)&&o.ps.length){PS=o.ps;CUR=Math.min(o.cur||0,PS.length-1);CF.forEach(k=>{if(o.c&&o.c[k]!==undefined)setv(k,o.c[k])})}
+ else{/* черновик прежнего формата — один нарушитель */
+  const p=emptyPerson();PF.forEach(k=>{if(o[k]!==undefined)p.f[k]=o[k]});PK.forEach(k=>{if(o.P&&o.P[k]!==undefined)p.p[k]=o.P[k]});p.manual=o.manual||{};p.v=o.v||[];
+  PS=[p];CUR=0;CF.forEach(k=>{if(o[k]!==undefined)setv(k,o[k])})}
+ writePerson(PS[CUR]);
  PH=Array.isArray(o.ph)?o.ph:[];PC=o.pc||{};
  if(!$("date").value)$("date").value=today();if(!$("szdate").value)$("szdate").value=today()}
-function measure(){
- if(P.cat=="local"){const m=$("locm").value;return m?{d:m,ext:[]}:null}
+function measure(o){o=o||readPerson();const f=o.f;
+ if(o.p.cat=="local"){const m=f.locm;return m?{d:m,ext:[]}:null}
  const ex=[];
- if($("opOn").checked)ex.push("снижени_ оперативной премии на "+($("opPct").value.trim()||"[__]")+"%");
- if($("isn").checked)ex.push("снижени_ ИСН");
- if($("kpe").checked)ex.push("снижени_ (невыплат~) годовой премии по КПЭ");
- const disc=$("disc").value;
+ if(f.opOn)ex.push("снижени_ оперативной премии на "+(String(f.opPct||"").trim()||"[__]")+"%");
+ if(f.isn)ex.push("снижени_ ИСН");
+ if(f.kpe)ex.push("снижени_ (невыплат~) годовой премии по КПЭ");
+ const disc=f.disc||"";
  if(!disc&&!ex.length)return null;
  return {d:disc,ext:ex};
 }
@@ -490,65 +527,101 @@ function measure(){
  (Правила поведения персонала, ПП Эль-Дабаа.007-2019), p — по месту: площадка, КПП, служебный автобус — работа, иначе — вне работы */
 const NAT={alcoW:"w",alco:"o",drink:"p",bring:"w",buy:"o",drug:"p",fight:"p",rude:"p",locals:"o",order:"w",late:"w",early:"w",absent:"w",nowarn:"w",face:"w",personal:"w",
  exit:"o",group:"o",guest:"o",drive:"o",pass:"w",reg:"w",dev:"w",photo:"p",smoke:"p",noise:"o",dress:"p",info:"p",prop:"p",other:"p"};
-function context(){
+function context(ids){
  const pv=$("place").value.trim(),atWork=["S","K","B"].some(k=>pv.startsWith(PLACES[k].trim()))||!Object.values(PLACES).some(x=>pv.startsWith(x.trim()))&&/(площадк|кпп|автобус|рабоч|участ|цех|склад)/i.test(pv),outside=!!pv&&!atWork;
- const set=new Set(chosen().map(x=>{const n=NAT[x.id]||"w";return n=="p"?(outside?"o":"w"):n}));
+ const set=new Set((ids||chosen().map(x=>x.id)).map(id=>{const n=NAT[id]||"w";return n=="p"?(outside?"o":"w"):n}));
  return set.has("w")&&set.has("o")?"wo":set.has("o")?"o":"w";
 }
-function citizen(){const c=$("cit").value;if(c=="*")return v("citOther");return c||U}
 /* ---- текст СЗ ---- */
-function make(){
- const c=chosen(),loc=P.cat=="local",f=P.sex=="f"?1:0;
- const n=v("fioN"),g=v("fioG"),a=v("fioA"),tab=v("tab");
- const wk=loc?"локальный работник ":"работник ";
- const person=wk+R.filial+" (далее – Филиал) "+v("pos")+" "+v("fioFull")+" ("+d($("dob").value)+" года рождения, "+(f?"гражданка ":"гражданин ")+citizen()+", таб. № "+tab+")";
- const acts=c.map(x=>x.id=="other"?v("otherText"):x.t[f]);
- const plc=places()===""?"":" "+v("place").replace(/[,\s]+$/,"").replace(/([^г])\.$/,"$1");
- let b="Настоящим сообщаю, что "+dw($("date").value)+tw($("time").value)+plc+" "+person+" "+end(jn(acts).replace(/\.$/,""));
- const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
- if(c.some(x=>x.med)&&P.medQ=="yes"){
-  b+="\n\nС согласия работника "+g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+v("mg")+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+v("act")+" от "+dw($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";
- }
- if(P.expl=="yes")b+="\n\nВ рамках проверки от "+g+" истребовано письменное объяснение.";
- if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась":" отказался")+", о чём составлен акт об отказе от объяснений от "+dw($("refDate").value)+".";
- let pp=[],pv=[];
- c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
+const MEDACT="нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения";
+/* данные одного нарушителя для текста СЗ; first — первый в записке (с «(далее – Филиал)») */
+function pinfo(o,first){
+ const fv=k=>o.f[k]==null?"":String(o.f[k]),vv=(k,def)=>fv(k).trim().replace(/[;,]+$/,"")||def||U;
+ const c=o.v.map(id=>V.find(x=>x.id==id)).filter(Boolean),loc=o.p.cat=="local",f=o.p.sex=="f"?1:0;
+ const p={o:o,c:c,loc:loc,f:f,n:vv("fioN"),g:vv("fioG"),a:vv("fioA"),tab:vv("tab"),wk:loc?"локальный работник ":"работник "};
+ const cit=fv("cit")=="*"?vv("citOther"):fv("cit")||U;
+ p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+vv("pos")+" "+vv("fioFull")+" ("+d(fv("dob"))+" года рождения, "+(f?"гражданка ":"гражданин ")+cit+", таб. № "+p.tab+")";
+ p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
+ p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
+ p.expl=o.p.expl;p.explPages=fv("explPages").trim();p.refDate=fv("refDate");p.refPages=fv("refPages").trim();
+ let pp=[],pv=[];c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
  pp=uniq(pp.concat(split($("ppAdd").value)));pv=uniq(pv.concat(split($("pvAdd").value)));
  const refs=[];
  if(pp.length)refs.push("п. "+pp.join(", ")+" "+R.pp);
  if(pv.length)refs.push("п. "+pv.join(", ")+" "+R.pvtr);
  $("lnaAdd").value.split("\n").map(s=>s.trim().replace(/[;.]$/,"")).filter(s=>s).forEach(s=>refs.push(s));
- if(!refs.length)refs.push(U);
- b+="\n\nТаким образом, "+wk+n+(f?" допустила":" допустил")+" нарушения:\n"+refs.join(";\n")+".";
- const ctx=context(),gr=$("gross").checked&&P.mode=="set"?"грубое ":"";
- const reason="за "+gr+"нарушение "+(ctx=="o"?"Правил поведения персонала при нахождении в Египте":ctx=="wo"?"трудовой дисциплины и Правил поведения персонала при нахождении в Египте":"трудовой дисциплины");
- const who2=(loc?"локального работника ":"")+a+", таб. № "+tab+",";
- const mm=P.mode=="set"?measure():null;
- let prop;
- if(!mm)prop="привлечь "+who2+" к дисциплинарной ответственности в виде "+U;
- else if(mm.d){prop="привлечь "+who2+" к дисциплинарной ответственности в виде "+mm.d;
-  if(mm.ext.length)prop+=" со "+jn(mm.ext.map(s=>s.replace(/_/g,"ем").replace(/~/g,"ой")))}
- else prop="применить в отношении "+g+", таб. № "+tab+", меры воздействия в виде "+jn(mm.ext.map(s=>s.replace(/_/g,"я").replace(/~/g,"ы")));
- b+="\n\nВ связи с вышеизложенным, предлагаю "+reason+" "+prop+".";
+ if(!refs.length)refs.push(U);p.refs=refs;
+ const ctx=context(o.v),gr=o.f.gross&&o.p.mode=="set"?"грубое ":"";
+ p.reason="за "+gr+"нарушение "+(ctx=="o"?"Правил поведения персонала при нахождении в Египте":ctx=="wo"?"трудовой дисциплины и Правил поведения персонала при нахождении в Египте":"трудовой дисциплины");
+ const who2=(loc?"локального работника ":"")+p.a+", таб. № "+p.tab+",",mm=o.p.mode=="set"?measure(o):null;
+ if(!mm)p.mtext="к дисциплинарной ответственности в виде "+U;
+ else if(mm.d){p.mtext="к дисциплинарной ответственности в виде "+mm.d;if(mm.ext.length)p.mtext+=" со "+jn(mm.ext.map(s=>s.replace(/_/g,"ем").replace(/~/g,"ой")))}
+ p.prop=!mm||mm.d?"привлечь "+who2+" "+p.mtext:"применить в отношении "+p.g+", таб. № "+p.tab+", меры воздействия в виде "+jn(mm.ext.map(s=>s.replace(/_/g,"я").replace(/~/g,"ы")));
+ p.who=(loc?"локального работника ":"")+p.a+", таб. № "+p.tab;
+ return p;
+}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const sur=p=>p.n.split(/\s+/)[0];
+function sumPages(a){return a.every(x=>/^\d+$/.test(x))?String(a.reduce((s,x)=>s+ +x,0)):""}
+function make(){
+ syncCur();
+ const ps=PS.map((o,i)=>pinfo(o,i==0)),one=ps.length==1,p0=ps[0];
+ const plc=places()===""?"":" "+v("place").replace(/[,\s]+$/,"").replace(/([^г])\.$/,"$1");
+ const when="Настоящим сообщаю, что "+dw($("date").value)+tw($("time").value)+plc+" ";
+ let b=one?when+p0.person+" "+end(p0.acts):when+ps.map(p=>p.person+" "+p.acts).join("; ")+".";
+ const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
+ /* медицинское освидетельствование */
+ const M=ps.filter(p=>p.med);
+ if(M.length==1){const p=M[0];
+  b+="\n\nС согласия работника "+p.g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+p.mg+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+p.act+" от "+dw(p.actDate)+" "+MEDACT+".";}
+ else if(M.length>1){const same=M.every(p=>p.actDate==M[0].actDate);
+  b+="\n\nС согласия работников "+jn(M.map(p=>p.g))+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил: "+
+   M.map(p=>"у "+p.g+" – "+p.mg+" мг/л").join("; ")+" в соответствии с показаниями анализатора. В присутствии комиссии составлены акты "+
+   (same?M.map(p=>"№ "+p.act+" ("+sur(p)+")").join(", ")+" от "+dw(M[0].actDate):M.map(p=>"№ "+p.act+" от "+dw(p.actDate)+" ("+sur(p)+")").join(", "))+
+   " нахождения работников (членов семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";}
+ /* объяснения */
+ const Y=ps.filter(p=>p.expl=="yes");
+ if(Y.length==1)b+="\n\nВ рамках проверки от "+Y[0].g+" истребовано письменное объяснение.";
+ else if(Y.length>1)b+="\n\nВ рамках проверки от "+jn(Y.map(p=>p.g))+" истребованы письменные объяснения.";
+ ps.filter(p=>p.expl=="ref").forEach(p=>b+="\n\nОт дачи письменного объяснения "+p.n+(p.f?" отказалась":" отказался")+", о чём составлен акт об отказе от объяснений от "+dw(p.refDate)+".");
+ /* нарушенные пункты */
+ const sameRefs=ps.every(p=>p.refs.join("|")==p0.refs.join("|"));
+ if(one)b+="\n\nТаким образом, "+p0.wk+p0.n+(p0.f?" допустила":" допустил")+" нарушения:\n"+p0.refs.join(";\n")+".";
+ else if(sameRefs)b+="\n\nТаким образом, "+(ps.every(p=>p.loc)?"локальные работники ":"работники ")+jn(ps.map(p=>p.n))+" допустили нарушения:\n"+p0.refs.join(";\n")+".";
+ else ps.forEach((p,i)=>b+="\n\n"+(i?cap(p.wk):"Таким образом, "+p.wk)+p.n+(p.f?" допустила":" допустил")+" нарушения:\n"+p.refs.join(";\n")+".");
+ /* предложение */
+ if(one)b+="\n\nВ связи с вышеизложенным, предлагаю "+p0.reason+" "+p0.prop+".";
+ else if(ps.every(p=>p.reason==p0.reason)){
+  const allP=ps.every(p=>p.prop.startsWith("привлечь "));
+  if(allP&&ps.every(p=>p.mtext==p0.mtext)&&!p0.mtext.includes(U))
+   b+="\n\nВ связи с вышеизложенным, предлагаю "+p0.reason+" привлечь "+(ps.every(p=>!p.loc)?"работников ":"")+jn(ps.map(p=>p.who))+" "+p0.mtext+".";
+  else b+="\n\nВ связи с вышеизложенным, предлагаю "+p0.reason+(allP?" привлечь:\n"+ps.map(p=>"- "+p.prop.replace(/^привлечь /,"")).join(";\n"):":\n"+ps.map(p=>"- "+p.prop).join(";\n"))+".";
+ }
+ else b+="\n\nВ связи с вышеизложенным, предлагаю:\n"+ps.map((p,i)=>(i+1)+". "+cap(p.reason)+" "+p.prop).join(";\n")+".";
+ /* приложения */
  const lines=[];
- if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
- if(P.expl=="ref")lines.push("Акт об отказе от объяснений от "+d($("refDate").value)+" ; "+$("refPages").value.trim());
- /* составленные акты: акт медосвидетельствования и прочие, указанные на шаге 3 */
- if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
+ ps.forEach(p=>{
+  if(p.expl=="yes")lines.push("Объяснительная записка "+p.g+" ; "+p.explPages);
+  if(p.expl=="ref")lines.push("Акт об отказе от объяснений "+(one?"":p.g+" ")+"от "+d(p.refDate)+" ; "+p.refPages);
+ });
+ if(M.length==1)lines.push("Акт № "+M[0].act+" от "+d(M[0].actDate)+" "+MEDACT+" ; "+M[0].actPages);
+ else if(M.length>1){const same=M.every(p=>p.actDate==M[0].actDate);
+  lines.push("Акты "+(same?M.map(p=>"№ "+p.act+" ("+p.n+")").join(", ")+" от "+d(M[0].actDate):M.map(p=>"№ "+p.act+" от "+d(p.actDate)+" ("+p.n+")").join(", "))+" "+MEDACT+" ; "+sumPages(M.map(p=>p.actPages)));}
  $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
  /* фото-доказательства — фототаблицей в конце DOCX, по 2 фото на лист */
  if(PH.length)lines.push("Фототаблица ; "+Math.ceil(PH.length/2));
  $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
- const one=s=>{const p=s.split(";");return p[0].trim()+" "+((p[1]||"").trim()||"[X]")+" л., 1 экз."};
+ const one_=s=>{const q=s.split(";");return q[0].trim()+" "+((q[1]||"").trim()||"[X]")+" л., 1 экз."};
  let att=[];
- if(lines.length==1)att=["Приложение: "+one(lines[0])];
- else if(lines.length>1)att=["Приложения:"].concat(lines.map((s,i)=>(i+1)+". "+one(s)+(i<lines.length-1?";":".")));
+ if(lines.length==1)att=["Приложение: "+one_(lines[0])];
+ else if(lines.length>1)att=["Приложения:"].concat(lines.map((s,i)=>(i+1)+". "+one_(s)+(i<lines.length-1?";":".")));
  /* устранение двойной точки в конце строки («1 экз..») */
  const dot=s=>s.replace(/\.\.(?=\n|$)/g,".");
  b=dot(b);att=att.map(dot);
  /* структура записки: из неё собираются и текст, и DOCX */
- SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+g,addr:R.addr,greet:R.greet,
-  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[SIGN.pos||U,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U]};
+ SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+jn(ps.map(p=>p.g)),addr:R.addr,greet:R.greet,
+  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[SIGN.pos||U,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U],
+  who:jn(ps.map(p=>p.g)),first:p0.n};
  const txt=SZ.head.join("\n")+"\n\n"+SZ.unit+"\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+SZ.date+" № "+SZ.num+"\n\n"+SZ.otn+
   "\n\n"+SZ.addr.map(s=>"\t\t\t"+s).join("\n")+"\n\n"+SZ.greet+"\n\n"+b+"\n\n"+SZ.decision+(att.length?"\n\n"+att.join("\n"):"")+
   "\n\n"+SZ.sign.join("\t\t")+"\n\n"+SZ.exec.join("\n");
@@ -560,15 +633,15 @@ function letter(withText){
   (withText?"\n\nПроект служебной записки:\n\n"+t:"\n\nСлужебная записка"+(PH.length?" с фототаблицей":"")+" во вложении.");
 }
 function sendMail(){
- for(let st=1;st<N;st++)if(!check(st)){step=st;refresh();window.scrollTo(0,0);return}
+ for(let st=1;st<N;st++)if(!checkAll(st)){step=st;refresh();window.scrollTo(0,0);return}
  if(!SIGN.name||!EXEC.fio){alert("Укажите "+(!SIGN.name?"подписанта":"исполнителя")+" в «Настройках» — данные запомнятся на этом телефоне");openSettings();return}
  if($("szdate").value&&$("szdate").value<$("date").value){alert("Дата служебной записки раньше даты нарушения. Исправьте в разделе «Для блока безопасности».");return}
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
  if(!name){alert("Впишите, кому отправить (часть адреса до @)");return}
- const to=name+DOMAIN,subj="СЗ в отношении "+v("fioG")+" от "+d($("date").value);
+ make();const to=name+DOMAIN,subj="СЗ в отношении "+SZ.who+" от "+d($("date").value);
  if(window.Android&&Android.emailDocx){
   const body=letter(false);
-  const fn=("СЗ "+v("fioN")+" "+d($("date").value)).replace(/[\\\/:*?"<>|\[\]]/g,"").replace(/\s+/g,"_")+".docx";
+  const fn=("СЗ "+SZ.first+(PS.length>1?" и др.":"")+" "+d($("date").value)).replace(/[\\\/:*?"<>|\[\]]/g,"").replace(/\s+/g,"_")+".docx";
   const photos=PH.map(id=>{let o={};try{o=JSON.parse(Android.photoData(id))}catch(e){}o.cap=(PC[id]||"").trim();return o}).filter(o=>o.b);
   Android.emailDocx(to,subj,body,fn,makeDocx(Object.assign({},SZ,{photos:photos})),"[]");return}
  const body=letter(true);
@@ -584,63 +657,74 @@ function copyTxt(){const t=make();
  ask — вопрос «оставить как есть?»; согласие запоминается до «Новой записки», чтобы не спрашивать повторно */
 const ACK=new Set();
 function ask(m){if(ACK.has(m))return true;const r=confirm(m);if(r)ACK.add(m);return r}
-function check(st){
+function al(m){alert(PFX+m)}
+function askP(m){return ask(PFX+m)}
+/* проверка шага для всех нарушителей; при ошибке на экране остаётся тот, у кого она найдена */
+function checkAll(st){const keep=CUR,multi=PS.length>1;let ok=true;
+ for(let i=0;i<PS.length&&ok;i++){if(multi){showPerson(i,1);PFX="Нарушитель "+(i+1)+(PS[i].f.fioN?" ("+PS[i].f.fioN+")":"")+": "}ok=check(st,i==0)}
+ PFX="";
+ if(ok&&st==1&&places()===null){alert("Отмеченные нарушения не могли произойти в одном месте: "+[...new Set(allChosen().filter(x=>x.wh!="-").map(x=>"«"+x.n+"»"))].join(", ")+". Составьте по ним отдельные служебные записки.");ok=false}
+ if(ok&&multi)showPerson(keep,1);
+ refresh();return ok}
+function check(st,first=true){
  const c=chosen(),ids=c.map(x=>x.id),nm=id=>"«"+V.find(x=>x.id==id).n+"»";
  if(st==1){
-  if(!c.length){alert("Отметьте, что случилось");return false}
-  if(ids.includes("other")&&!$("otherText").value.trim()){alert("Опишите нарушение");return false}
+  if(!c.length){al("Отметьте, что случилось");return false}
+  if(ids.includes("other")&&!$("otherText").value.trim()){al("Опишите нарушение");return false}
   const cf=CONFLICT.find(p=>ids.includes(p[0])&&ids.includes(p[1]));
-  if(cf){alert("Нарушения "+nm(cf[0])+" и "+nm(cf[1])+" исключают друг друга. Оставьте одно из них.");return false}
-  if(places()===null){alert("Отмеченные нарушения не могли произойти в одном месте: "+c.filter(x=>x.wh!="-").map(x=>"«"+x.n+"»").join(", ")+". Составьте по ним отдельные служебные записки.");return false}
+  if(cf){al("Нарушения "+nm(cf[0])+" и "+nm(cf[1])+" исключают друг друга. Оставьте одно из них.");return false}
  }
  if(st==2){
   const fio=$("fioFull").value.trim();
-  if(!fio){alert("Впишите ФИО нарушителя");return false}
+  if(!fio){al("Впишите ФИО нарушителя");return false}
   const sx=sexOf(fio);
-  if(sx&&sx!=P.sex&&!ask("По отчеству «"+fio.split(/\s+/).pop()+"» нарушитель — "+(sx=="f"?"женщина":"мужчина")+", а выбрано «"+(P.sex=="f"?"Женщина":"Мужчина")+"». Оставить как есть?"))return false;
+  if(sx&&sx!=P.sex&&!askP("По отчеству «"+fio.split(/\s+/).pop()+"» нарушитель — "+(sx=="f"?"женщина":"мужчина")+", а выбрано «"+(P.sex=="f"?"Женщина":"Мужчина")+"». Оставить как есть?"))return false;
   const cit=$("cit").value,eg=cit=="Арабской Республики Египет";
-  if(cit&&cit!="*"&&P.cat=="local"&&!eg&&!ask("Выбран «Местный работник», а гражданство — не Египет. Оставить как есть?"))return false;
-  if(P.cat=="foreign"&&eg&&!ask("Выбран «Иностранный работник», а гражданство — Египет. Оставить как есть?"))return false;
+  if(cit&&cit!="*"&&P.cat=="local"&&!eg&&!askP("Выбран «Местный работник», а гражданство — не Египет. Оставить как есть?"))return false;
+  if(P.cat=="foreign"&&eg&&!askP("Выбран «Иностранный работник», а гражданство — Египет. Оставить как есть?"))return false;
   const dob=$("dob").value;
   if(dob){const a=(new Date(today())-new Date(dob))/31557600000;
-   if(a<0){alert("Дата рождения позже сегодняшней даты");return false}
-   if(a<16){alert("По дате рождения работнику меньше 16 лет. Проверьте дату.");return false}
-   if(a>80&&!ask("По дате рождения работнику больше 80 лет. Оставить как есть?"))return false}
-  if($("tab").value.trim()&&!/^\d+$/.test($("tab").value.trim())&&!ask("Табельный номер содержит не только цифры. Оставить как есть?"))return false;
+   if(a<0){al("Дата рождения позже сегодняшней даты");return false}
+   if(a<16){al("По дате рождения работнику меньше 16 лет. Проверьте дату.");return false}
+   if(a>80&&!askP("По дате рождения работнику больше 80 лет. Оставить как есть?"))return false}
+  if($("tab").value.trim()&&!/^\d+$/.test($("tab").value.trim())&&!askP("Табельный номер содержит не только цифры. Оставить как есть?"))return false;
  }
  if(st==3){
   const dt=$("date").value;
-  if(!dt){alert("Укажите дату нарушения");return false}
-  if(dt>today()){alert("Дата нарушения позже сегодняшней");return false}
-  if(dt==today()&&$("time").value){const n=new Date(),hm=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");if($("time").value>hm){alert("Время нарушения позже текущего");return false}}
+  /* общее для всей записки — проверяется один раз, без указания нарушителя */
+  if(first){const px=PFX;PFX="";const ok=(()=>{
+  if(!dt){al("Укажите дату нарушения");return false}
+  if(dt>today()){al("Дата нарушения позже сегодняшней");return false}
+  if(dt==today()&&$("time").value){const n=new Date(),hm=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");if($("time").value>hm){al("Время нарушения позже текущего");return false}}
   if(places()!==""){const pv=$("place").value.trim(),a=places();
-   if(!pv){alert("Укажите место нарушения");return false}
+   if(!pv){al("Укажите место нарушения");return false}
    const bad=Object.keys(PLACES).find(k=>!keys(a).includes(k)&&pv.startsWith(PLACES[k].trim()));
-   if(bad){alert("Место «"+PLACES[bad].trim()+"» не подходит к отмеченному нарушению");return false}
-   if(/№\s*$/.test(pv)){alert("Укажите номер КПП");return false}
+   if(bad){al("Место «"+PLACES[bad].trim()+"» не подходит к отмеченному нарушению");return false}
+   if(/№\s*$/.test(pv)){al("Укажите номер КПП");return false}
    if(/(в г\.|пункте|автодороге|районе|автобусе|месте)\s*$/.test(pv)&&!ACK.has("place:"+pv)){
     if(confirm("Место указано не полностью: «"+pv+"». Дописать?\n\nОК — дописать, Отмена — оставить так."))return false;ACK.add("place:"+pv)}}
+  return true})();PFX=px;if(!ok)return false}
   /* режим тишины — с 22:00 до 8:00 */
-  if(ids.includes("noise")&&$("time").value&&$("time").value>="08:00"&&$("time").value<"22:00"){alert("«"+V.find(x=>x.id=="noise").n+"» — режим тишины действует с 22:00 до 8:00, а указано время "+$("time").value+". Исправьте время или нарушение.");return false}
+  if(ids.includes("noise")&&$("time").value&&$("time").value>="08:00"&&$("time").value<"22:00"){al("«"+V.find(x=>x.id=="noise").n+"» — режим тишины действует с 22:00 до 8:00, а указано время "+$("time").value+". Исправьте время или нарушение.");return false}
   /* даты актов: указаны, не раньше нарушения и не позже сегодняшней */
-  const actD=(id,nm)=>{const x=$(id).value;if(!x){alert("Укажите дату акта "+nm);return false}
-   if(x<dt){alert("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){alert("Дата акта "+nm+" позже сегодняшней");return false}return true};
+  const actD=(id,nm)=>{const x=$(id).value;if(!x){al("Укажите дату акта "+nm);return false}
+   if(x<dt){al("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){al("Дата акта "+nm+" позже сегодняшней");return false}return true};
   if(c.some(x=>x.med)&&P.medQ=="yes"&&!actD("actDate","медицинского освидетельствования"))return false;
   if(P.expl=="ref"&&!actD("refDate","об отказе от объяснений"))return false;
   if(c.some(x=>x.med)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
-   if(isNaN(mg)&&!ask("Не указаны показания алкотестера. Продолжить без них?"))return false;
-   if(mg===0&&!ask("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
+   if(isNaN(mg)&&!askP("Не указаны показания алкотестера. Продолжить без них?"))return false;
+   if(mg===0&&!askP("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
  }
  if(st==4&&P.mode=="set"){
-  if(!measure()){alert("Выберите взыскание или нажмите «Решит блок безопасности»");return false}
+  if(!measure()){al("Выберите взыскание или нажмите «Решит блок безопасности»");return false}
   const gross=$("gross").checked;
   if(P.cat=="local"){
-   if(/150 EGP/.test($("locm").value)&&!ids.includes("face")&&!ask("Штраф 150 EGP предусмотрен за отсутствие отметки FACE ID, а это нарушение не отмечено. Оставить как есть?"))return false;
+   if(/150 EGP/.test($("locm").value)&&!ids.includes("face")&&!askP("Штраф 150 EGP предусмотрен за отсутствие отметки FACE ID, а это нарушение не отмечено. Оставить как есть?"))return false;
   }else{
    const disc=$("disc").value;
-   if($("opOn").checked){const pc=$("opPct").value.trim();if(!/^\d+$/.test(pc)||+pc<1||+pc>100){alert("Укажите, на сколько процентов снизить оперативную премию: от 1 до 100");return false}}
-   if(/увольнения/.test(disc)&&!gross&&!ask("Предложено увольнение, а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
-   if(disc=="замечания"&&gross&&!ask("Отмечено грубое нарушение, а предложено замечание. Оставить как есть?"))return false;
+   if($("opOn").checked){const pc=$("opPct").value.trim();if(!/^\d+$/.test(pc)||+pc<1||+pc>100){al("Укажите, на сколько процентов снизить оперативную премию: от 1 до 100");return false}}
+   if(/увольнения/.test(disc)&&!gross&&!askP("Предложено увольнение, а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
+   if(disc=="замечания"&&gross&&!askP("Отмечено грубое нарушение, а предложено замечание. Оставить как есть?"))return false;
   }
  }
  return true;
@@ -661,7 +745,7 @@ function back(){if($("ck").style.display==""){if($("ckCard").style.display==""){
 function clearAll(quiet){if(!quiet&&!confirm("Начать новую записку? Всё введённое будет удалено."))return;
  const keep={mailTo:$("mailTo").value};
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
- Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"});manual={};
+ Object.assign(P,P0);manual={};PS=[emptyPerson()];CUR=0;
  ["mailTo"].forEach(k=>setv(k,keep[k]));
  closeSearch();$("fioRes").style.display="none";
  ACK.clear();PH=[];PC={};if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
@@ -886,9 +970,9 @@ function ckShow(i){
 function ckBack(){$("ckCard").style.display="none";$("ckList").style.display="";$("cq").focus()}
 /* начать СЗ: данные работника — в шаг 2, сам мастер — с шага 1 */
 function ckSz(i){
- const draft=chosen().length||$("fioFull").value.trim()||PH.length;
- if(draft&&!confirm("Начать новую записку на этого работника? Текущий черновик будет очищен."))return;
- clearAll(1);pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
+ const draft=chosen().length||$("fioFull").value.trim()||PS.length>1||PH.length;
+ if(draft){if(confirm("Добавить этого работника в текущую записку ещё одним нарушителем?\n\nОК — добавить, Отмена — начать новую записку"))addPerson();else clearAll(1)}
+ pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
 function openSearch(){$("sp").style.display="";$("q").value="";search();$("q").focus()}
 function closeSearch(){$("sp").style.display="none";$("q").blur()}
 function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-1]||"";
@@ -934,6 +1018,7 @@ $("fioFull").addEventListener("input",fioHint);
 $("fioFull").addEventListener("blur",()=>setTimeout(()=>$("fioRes").style.display="none",150));
 try{const s=window.Android&&Android.baseLoad?Android.baseLoad():"";if(s)BASE=JSON.parse(s)}catch(e){BASE=null}
 dbRefresh();
+PS=[emptyPerson()];
 load();
 if(window.Android&&Android.photoKeep)Android.photoKeep(JSON.stringify(PH));
 phRender();refresh();
