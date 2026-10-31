@@ -170,12 +170,17 @@ details summary{font-size:14px;color:var(--muted)}
 <div><label>Показания, мг/л</label><input id="mg" inputmode="decimal" placeholder="0,565"></div>
 <div><label>№ акта</label><input id="act"></div>
 </div>
-<label>Листов в акте</label><input id="actPages" inputmode="numeric">
+<div class="two"><div><label>Дата акта</label><input id="actDate" type="date"></div><div><label>Листов в акте</label><input id="actPages" inputmode="numeric"></div></div>
 </div>
 </div>
 <label>Объяснительная от нарушителя</label>
 <div class="pick" data-f="expl"><button data-v="yes">Взяли</button><button data-v="no">Не брали</button><button data-v="ref">Отказался писать</button></div>
 <div id="explL"><label>Сколько листов</label><input id="explPages" inputmode="numeric"></div>
+<div id="refL">
+<label>Акт об отказе от объяснений</label>
+<div class="two"><div><label>№ акта</label><input id="refAct"></div><div><label>Дата акта</label><input id="refDate" type="date"></div></div>
+<label>Листов в акте</label><input id="refPages" inputmode="numeric">
+</div>
 <label>Другие составленные акты (необязательно)</label>
 <textarea id="acts" placeholder="каждый акт с новой строки: название акта ; количество листов"></textarea>
 <small class="h">Все акты попадут в «Приложения» служебной записки.</small>
@@ -235,8 +240,6 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Дополнительные пункты ПВТР (через запятую)</label><input id="pvAdd">
 <label>Иные документы (полная ссылка, каждая с новой строки)</label><textarea id="lnaAdd"></textarea>
 <div class="two"><div><label>Дата СЗ</label><input id="szdate" type="date"></div><div><label>Номер</label><input id="num" placeholder="[XXX]"></div></div>
-<label>Подписант (должность ; И.О. Фамилия)</label>
-<input id="sign" value="Заместитель директора филиала по безопасности ; О.П. Сай">
 <button class="alt" onclick="make()">Обновить текст</button>
 </details>
 <button class="alt" onclick="clearAll()">Новая записка (очистить всё)</button>
@@ -251,6 +254,13 @@ details summary{font-size:14px;color:var(--muted)}
 <button onclick="pickBase()">Загрузить файл Excel (.xlsx)</button>
 <button class="alt" id="dbDel" onclick="delBase()">Удалить базу</button>
 <small class="h">Имя файла и порядок колонок могут быть любыми. После выбора файла проверьте, из каких колонок взяты поля.</small>
+</div>
+<div class="card">
+<h2>Подписант</h2>
+<div class="hint">Подписывает служебную записку. Заполняется один раз и запоминается на этом телефоне.</div>
+<label>Должность</label><input id="sgPos" autocomplete="off" placeholder="должность подписанта">
+<label>Инициалы и фамилия</label><input id="sgName" autocomplete="off" placeholder="И.О. Фамилия">
+<button onclick="saveSign()">Сохранить подписанта</button>
 </div>
 <div class="card">
 <h2>Исполнитель</h2>
@@ -363,7 +373,7 @@ const V=[
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num","sign"];
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refAct","refDate","refPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 const N=5;
@@ -447,7 +457,7 @@ function refresh(){
  $("otherBox").style.display=c.some(x=>x.id=="other")?"":"none";
  $("medBox").style.display=c.some(x=>x.med)?"":"none";
  $("medData").style.display=P.medQ=="yes"?"":"none";
- $("explL").style.display=P.expl=="yes"?"":"none";
+ $("explL").style.display=P.expl=="yes"?"":"none";$("refL").style.display=P.expl=="ref"?"":"none";
  $("mSet").style.display=P.mode=="set"?"":"none";
  $("mForeign").style.display=loc?"none":"";$("mLocal").style.display=loc?"":"none";
  $("citOther").style.display=$("cit").value=="*"?"":"none";
@@ -477,6 +487,15 @@ function measure(){
  if(!disc&&!ex.length)return null;
  return {d:disc,ext:ex};
 }
+/* характер нарушения для основания в предложении: w — на работе (трудовая дисциплина), o — вне работы
+ (Правила поведения персонала, ПП Эль-Дабаа.007-2019), p — по месту: площадка, КПП, служебный автобус — работа, иначе — вне работы */
+const NAT={alcoW:"w",alco:"o",drink:"p",bring:"w",buy:"o",drug:"p",fight:"p",rude:"p",locals:"o",order:"w",late:"w",early:"w",absent:"w",nowarn:"w",face:"w",personal:"w",
+ exit:"o",group:"o",guest:"o",drive:"o",pass:"w",reg:"w",dev:"w",photo:"p",smoke:"p",noise:"o",dress:"p",info:"p",prop:"p",other:"p"};
+function context(){
+ const pv=$("place").value.trim(),atWork=["S","K","B"].some(k=>pv.startsWith(PLACES[k].trim()))||!Object.values(PLACES).some(x=>pv.startsWith(x.trim()))&&/(площадк|кпп|автобус|рабоч|участ|цех|склад)/i.test(pv),outside=!!pv&&!atWork;
+ const set=new Set(chosen().map(x=>{const n=NAT[x.id]||"w";return n=="p"?(outside?"o":"w"):n}));
+ return set.has("w")&&set.has("o")?"wo":set.has("o")?"o":"w";
+}
 function citizen(){const c=$("cit").value;if(c=="*")return v("citOther");return c||U}
 /* ---- текст СЗ ---- */
 function make(){
@@ -489,10 +508,10 @@ function make(){
  let b="Настоящим сообщаю, что "+dw($("date").value)+tw($("time").value)+plc+" "+person+" "+end(jn(acts).replace(/\.$/,""));
  const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
  if(c.some(x=>x.med)&&P.medQ=="yes"){
-  b+="\n\nС согласия работника "+g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+v("mg")+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+v("act")+" от "+dw($("date").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";
+  b+="\n\nС согласия работника "+g+" на основании "+R.med+" проведена процедура медицинского освидетельствования на факт употребления спиртных напитков, результат которой составил "+v("mg")+" мг/л в соответствии с показаниями анализатора. В присутствии комиссии составлен акт № "+v("act")+" от "+dw($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения.";
  }
  if(P.expl=="yes")b+="\n\nВ рамках проверки от "+g+" истребовано письменное объяснение.";
- if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась.":" отказался.");
+ if(P.expl=="ref")b+="\n\nОт дачи письменного объяснения "+n+(f?" отказалась":" отказался")+", о чём составлен акт об отказе от объяснений № "+v("refAct")+" от "+dw($("refDate").value)+".";
  let pp=[],pv=[];
  c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
  pp=uniq(pp.concat(split($("ppAdd").value)));pv=uniq(pv.concat(split($("pvAdd").value)));
@@ -502,7 +521,8 @@ function make(){
  $("lnaAdd").value.split("\n").map(s=>s.trim().replace(/[;.]$/,"")).filter(s=>s).forEach(s=>refs.push(s));
  if(!refs.length)refs.push(U);
  b+="\n\nТаким образом, "+wk+n+(f?" допустила":" допустил")+" нарушения:\n"+refs.join(";\n")+".";
- const reason=$("gross").checked&&P.mode=="set"?"за грубое нарушение трудовой дисциплины":"за нарушение трудовой дисциплины";
+ const ctx=context(),gr=$("gross").checked&&P.mode=="set"?"грубое ":"";
+ const reason="за "+gr+"нарушение "+(ctx=="o"?"Правил поведения персонала при нахождении в Египте":ctx=="wo"?"трудовой дисциплины и Правил поведения персонала при нахождении в Египте":"трудовой дисциплины");
  const who2=(loc?"локального работника ":"")+a+", таб. № "+tab+",";
  const mm=P.mode=="set"?measure():null;
  let prop;
@@ -513,8 +533,9 @@ function make(){
  b+="\n\nВ связи с вышеизложенным, предлагаю "+reason+" "+prop+".";
  const lines=[];
  if(P.expl=="yes")lines.push("Объяснительная записка "+g+" ; "+$("explPages").value.trim());
+ if(P.expl=="ref")lines.push("Акт об отказе от объяснений № "+v("refAct")+" от "+d($("refDate").value)+" ; "+$("refPages").value.trim());
  /* составленные акты: акт медосвидетельствования и прочие, указанные на шаге 3 */
- if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("date").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
+ if(c.some(x=>x.med)&&P.medQ=="yes")lines.push("Акт № "+v("act")+" от "+d($("actDate").value)+" нахождения работника (члена семьи) на рабочем месте (в местах проживания) в состоянии алкогольного (наркотического/токсического) опьянения ; "+$("actPages").value.trim());
  $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
  /* фото-доказательства — фототаблицей в конце DOCX, по 2 фото на лист */
  if(PH.length)lines.push("Фототаблица ; "+Math.ceil(PH.length/2));
@@ -523,13 +544,12 @@ function make(){
  let att=[];
  if(lines.length==1)att=["Приложение: "+one(lines[0])];
  else if(lines.length>1)att=["Приложения:"].concat(lines.map((s,i)=>(i+1)+". "+one(s)+(i<lines.length-1?";":".")));
- const sg=v("sign").split(";");
  /* устранение двойной точки в конце строки («1 экз..») */
  const dot=s=>s.replace(/\.\.(?=\n|$)/g,".");
  b=dot(b);att=att.map(dot);
  /* структура записки: из неё собираются и текст, и DOCX */
  SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+g,addr:R.addr,greet:R.greet,
-  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[sg[0].trim(),(sg[1]||"").trim()],exec:[EXEC.fio||U,EXEC.tel||U]};
+  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[SIGN.pos||U,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U]};
  const txt=SZ.head.join("\n")+"\n\n"+SZ.unit+"\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+SZ.date+" № "+SZ.num+"\n\n"+SZ.otn+
   "\n\n"+SZ.addr.map(s=>"\t\t\t"+s).join("\n")+"\n\n"+SZ.greet+"\n\n"+b+"\n\n"+SZ.decision+(att.length?"\n\n"+att.join("\n"):"")+
   "\n\n"+SZ.sign.join("\t\t")+"\n\n"+SZ.exec.join("\n");
@@ -542,7 +562,7 @@ function letter(withText){
 }
 function sendMail(){
  for(let st=1;st<N;st++)if(!check(st)){step=st;refresh();window.scrollTo(0,0);return}
- if(!EXEC.fio){alert("Укажите исполнителя в «Настройках» — он запомнится на этом телефоне");openSettings();return}
+ if(!SIGN.name||!EXEC.fio){alert("Укажите "+(!SIGN.name?"подписанта":"исполнителя")+" в «Настройках» — данные запомнятся на этом телефоне");openSettings();return}
  if($("szdate").value&&$("szdate").value<$("date").value){alert("Дата служебной записки раньше даты нарушения. Исправьте в разделе «Для блока безопасности».");return}
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
  if(!name){alert("Впишите, кому отправить (часть адреса до @)");return}
@@ -603,6 +623,11 @@ function check(st){
     if(confirm("Место указано не полностью: «"+pv+"». Дописать?\n\nОК — дописать, Отмена — оставить так."))return false;ACK.add("place:"+pv)}}
   /* режим тишины — с 22:00 до 8:00 */
   if(ids.includes("noise")&&$("time").value&&$("time").value>="08:00"&&$("time").value<"22:00"){alert("«"+V.find(x=>x.id=="noise").n+"» — режим тишины действует с 22:00 до 8:00, а указано время "+$("time").value+". Исправьте время или нарушение.");return false}
+  /* даты актов: указаны, не раньше нарушения и не позже сегодняшней */
+  const actD=(id,nm)=>{const x=$(id).value;if(!x){alert("Укажите дату акта "+nm);return false}
+   if(x<dt){alert("Дата акта "+nm+" раньше даты нарушения");return false}if(x>today()){alert("Дата акта "+nm+" позже сегодняшней");return false}return true};
+  if(c.some(x=>x.med)&&P.medQ=="yes"&&!actD("actDate","медицинского освидетельствования"))return false;
+  if(P.expl=="ref"&&!actD("refDate","об отказе от объяснений"))return false;
   if(c.some(x=>x.med)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
    if(isNaN(mg)&&!ask("Не указаны показания алкотестера. Продолжить без них?"))return false;
    if(mg===0&&!ask("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
@@ -635,10 +660,10 @@ function phDel(i){if(!confirm("Удалить фото "+(i+1)+"?"))return;const
 /* системная кнопка «Назад»: шаг назад; false — закрыть приложение */
 function back(){if($("ck").style.display==""){if($("ckCard").style.display==""){ckBack();return true}closeCheck();return true}if($("st").style.display==""){closeSettings();return true}if($("sp").style.display==""){closeSearch();return true}if(step>1){go(-1);return true}return false}
 function clearAll(quiet){if(!quiet&&!confirm("Начать новую записку? Всё введённое будет удалено."))return;
- const keep={mailTo:$("mailTo").value,sign:$("sign").value};
+ const keep={mailTo:$("mailTo").value};
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
  Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"});manual={};
- ["mailTo","sign"].forEach(k=>setv(k,keep[k]));
+ ["mailTo"].forEach(k=>setv(k,keep[k]));
  closeSearch();$("fioRes").style.display="none";
  ACK.clear();PH=[];PC={};if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
  $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
@@ -659,6 +684,35 @@ const FIELDS=[
  {k:"pos",n:"Должность",h:/должност/i,ok:x=>!/[а-яёa-z][А-ЯЁA-Z]/.test(x)&&/(разряд|специалист|начальник|мастер|инженер|рабочий|монтажник|слесар|электр|водител|машинист|директор|заместител|руководител|оператор|бетонщик|арматурщик|сварщик|переводчик|техник|кладовщик|производител|диспетчер|экономист|бухгалтер|юрисконсульт|менеджер|механик|энергетик|геодезист|лаборант|контролер|контролёр|дефектоскопист|наладчик|изолировщик|плотник|маляр|штукатур|стропальщик|такелажник|уборщ|повар|охранник|врач|фельдшер|медсестр|кадр|табельщик|распределител|ведущий|главный|старший)/i.test(x)},
  {k:"div",n:"Подразделение",h:/(подразделени|участок|отдел$)/i,ok:x=>/(участок|отдел|групп|цех|служб|управлени|лаборатори|склад|база|руководство|бюро|сектор)/i.test(x)}
 ];
+/* ===== ПОЛНЫЕ НАИМЕНОВАНИЯ: учётная система обрезает текст до 40 знаков и сокращает слова =====
+ должность: обрезанный разряд («1 раз», «2 р», «3 разря») → «N разряда», сокращения → полные слова;
+ подразделение: обрезанные и сокращённые названия → полные. Новые случаи добавляются сюда. */
+const FULL_POS=[
+ [/^Зам\.\s*/,"Заместитель "],[/техн\. трубопроводов/,"технологических трубопроводов"],[/строительных констр\./,"строительных конструкций"],
+ [/Наладчик свароч\. и газоплаз\. оборуд\./,"Наладчик сварочного и газоплазморезательного оборудования"],[/технологического оборуд\./,"технологического оборудования"],
+ [/по обслуж\. и ремонту оборуд\./,"по обслуживанию и ремонту оборудования"],[/по ремонту эл\.обор\./,"по ремонту электрооборудования"],
+ [/по рем\.и обс\.элек-я/,"по ремонту и обслуживанию электрооборудования"],[/компресс\. установок/,"компрессорных установок"],
+ [/сист вен, кондиц воздуха/,"систем вентиляции, кондиционирования воздуха"],[/с програм\. управ\./,"с программным управлением"],
+ [/рен-но, гаммаграфир\./,"рентгено-, гаммаграфирования"],[/стр\. лаборатории/,"строительной лаборатории"],[/по вент\. работам/,"по вентиляционным работам"],
+ [/по экон\. и финан\.$/,"по экономике и финансам"],[/оборудовани$/,"оборудования"],[/ оборуд$/," оборудования"],[/внешних объек$/,"внешних объектов"],
+ [/(\d)\s*(р|ра|раз|разр|разря)\.?$/,"$1 разряда"],[/\s{2,}/g," "]];
+const FULL_DIV={
+ "Участок строительства внешних объект":"Участок строительства внешних объектов",
+ "Группа наладки сварочного оборудован":"Группа наладки сварочного оборудования",
+ "Служба зам.директора филиала по строит":"Служба заместителя директора филиала по строительству",
+ "Пр. база по изгот. металл. Цех №1":"Цех №1 производственной базы по изготовлению металлоконструкций",
+ "Пр. база по изгот. металл. Цех АКЗ":"Цех АКЗ производственной базы по изготовлению металлоконструкций",
+ "Произв. база по изгот. металлоконст.":"Производственная база по изготовлению металлоконструкций",
+ "Отдел производственно-тех. комплектации":"Отдел производственно-технической комплектации",
+ "Группа по инф. технологиям":"Группа по информационным технологиям",
+ "Группа по обучению и соц. политике":"Группа по обучению и социальной политике",
+ "Отдел планир. и подготовки производства":"Отдел планирования и подготовки производства",
+ "Группа по организации труда и заработной":"Группа по организации труда и заработной платы",
+ "Группа по внесению изменений в рабочую д":"Группа по внесению изменений в рабочую документацию",
+ "Группа по медицинскому сопровождению пер":"Группа по медицинскому сопровождению персонала"
+};
+function fullPos(x){x=String(x||"").trim();FULL_POS.forEach(([a,b])=>x=x.replace(a,b));return x}
+function fullDiv(x){x=String(x||"").trim().replace(PREF,"");return FULL_DIV[x]||x}
 /* служебные приставки категорий в названии подразделения — не учитываются */
 const PREF=/^(ОПР|ИТР|ВПР|ПМ)\s+/;
 const CIT=[[/^(рф|россия|российск)/,"Российской Федерации"],[/^(белорус|беларус)/,"Республики Беларусь"],[/^казах/,"Республики Казахстан"],
@@ -696,7 +750,7 @@ function rowOf(r,map){
  const g=k=>map[k]==null?"":String(r[map[k]]==null?"":r[map[k]]).trim();
  const fio=map.fio!=null?g("fio"):[g("fam"),g("nam"),g("otc")].filter(x=>x).join(" ");
  const x=g("sex").toLowerCase(),sex=/^(м|муж|мужской|male|m)\.?$/.test(x)?"m":/^(ж|жен|женский|female|f)\.?$/.test(x)?"f":"";
- return [g("tab"),fio,g("cit"),xdate(g("dob")),g("pos"),g("div").replace(PREF,""),sex];
+ return [g("tab"),fio,g("cit"),xdate(g("dob")),fullPos(g("pos")),fullDiv(g("div")),sex];
 }
 /* файл прочитан (вызывается из MainActivity) — показать сопоставление колонок */
 function baseParsed(name){
@@ -741,9 +795,15 @@ function dbRefresh(){
  $("dbBox").style.display=BASE?"":"none";$("bChk1").style.display=BASE?"":"none";$("dbDel").style.display=BASE?"":"none";
  $("dbInfo").textContent=dbText();
  $("dbLine").innerHTML=BASE?"База от "+d(BASE.date)+", "+BASE.rows.length+" чел. · <a onclick='pickBase()'>Обновить</a>":"";
- if(BASE){BASE.rows.forEach(r=>r[5]=(r[5]||"").replace(PREF,""));BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));BASE.fn=BASE.rows.map(r=>norm(r[1]))}
+ if(BASE){BASE.rows.forEach(r=>{r[4]=fullPos(r[4]);r[5]=fullDiv(r[5])});BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));BASE.fn=BASE.rows.map(r=>norm(r[1]))}
 }
-function openSettings(){$("st").style.display="";$("exFio").value=EXEC.fio||"";$("exTel").value=EXEC.tel||"";dbRefresh()}
+function openSettings(){$("st").style.display="";$("exFio").value=EXEC.fio||"";$("exTel").value=EXEC.tel||"";$("sgPos").value=SIGN.pos||"";$("sgName").value=SIGN.name||"";dbRefresh()}
+/* подписант — так же, как исполнитель: хранится отдельно и не стирается «Новой запиской» */
+let SIGN={};try{SIGN=JSON.parse(localStorage.getItem("sz_sign")||"{}")}catch(e){}
+function saveSign(){const pos=$("sgPos").value.trim().replace(/\s+/g," "),name=$("sgName").value.trim().replace(/\s+/g," ");
+ if(!pos||!name){alert("Впишите должность, инициалы и фамилию подписанта");return}
+ SIGN={pos:pos,name:name};try{localStorage.setItem("sz_sign",JSON.stringify(SIGN))}catch(e){}
+ execLine();alert("Подписант сохранён");if(step==N)make()}
 /* исполнитель — отдельно от черновика записки, «Новая записка» его не стирает */
 let EXEC={};try{EXEC=JSON.parse(localStorage.getItem("sz_exec")||"{}")}catch(e){}
 function saveExec(){const fio=$("exFio").value.trim().replace(/\s+/g," "),tel=$("exTel").value.trim();
@@ -751,7 +811,8 @@ function saveExec(){const fio=$("exFio").value.trim().replace(/\s+/g," "),tel=$(
  if(!/\d{6,}/.test(tel.replace(/\D/g,""))){alert("Впишите телефон исполнителя");return}
  EXEC={fio:fio,tel:tel};try{localStorage.setItem("sz_exec",JSON.stringify(EXEC))}catch(e){}
  execLine();alert("Исполнитель сохранён");if(step==N)make()}
-function execLine(){$("execLine").innerHTML=EXEC.fio?"Исполнитель: "+esc(EXEC.fio)+", тел. "+esc(EXEC.tel)+" · <a onclick='openSettings()'>Изменить</a>":"<b>Исполнитель не указан.</b> <a onclick='openSettings()'>Указать</a>"}
+function execLine(){$("execLine").innerHTML=(SIGN.name?"Подписант: "+esc(SIGN.pos)+" "+esc(SIGN.name):"<b>Подписант не указан.</b>")+"<br>"+
+ (EXEC.fio?"Исполнитель: "+esc(EXEC.fio)+", тел. "+esc(EXEC.tel):"<b>Исполнитель не указан.</b>")+" · <a onclick='openSettings()'>"+(SIGN.name&&EXEC.fio?"Изменить":"Указать")+"</a>"}
 function closeSettings(){$("st").style.display="none"}
 /* отбор по запросу: массив индексов строк базы в порядке показа */
 function find(q0){
@@ -818,7 +879,7 @@ function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-
  if(w.some(x=>/^(оглы|угли|улы|уулу)$/.test(x))||/(вич|ич|улы)$/.test(l))return "m";return ""}
 function lc(s){return s&&!/^.[A-ZА-ЯЁ]/.test(s)?s.charAt(0).toLowerCase()+s.slice(1):s}
 /* подразделение в родительном падеже: «Монтажный участок №9» → «монтажного участка № 9»; null — если не удалось */
-const NOUN={"участок":"участка","отдел":"отдела","группа":"группы","служба":"службы","управление":"управления","лаборатория":"лаборатории","склад":"склада","цех":"цеха"};
+const NOUN={"участок":"участка","отдел":"отдела","группа":"группы","служба":"службы","управление":"управления","лаборатория":"лаборатории","склад":"склада","цех":"цеха","база":"базы"};
 function adjG(w){const l=w.toLowerCase();
  if(/ий$/.test(l))return w.slice(0,-2)+(/[гкхжшчщ]ий$/.test(l)?"ого":"его");
  if(/(ый|ой|ое)$/.test(l))return w.slice(0,-2)+"ого";

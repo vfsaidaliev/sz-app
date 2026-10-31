@@ -17,6 +17,25 @@ android {
         versionName "1.${build}"
     }
 
+    /* постоянный ключ подписи: app/sz.jks создаётся в GitHub Actions из секрета SIGNING_KEYSTORE,
+       пароль — секрет SIGNING_PASSWORD; без них сборка подписывается обычным отладочным ключом */
+    def ks = file('sz.jks')
+    signingConfigs {
+        stable {
+            if (ks.exists()) {
+                storeFile ks
+                storePassword System.getenv('SIGNING_PASSWORD')
+                keyAlias 'sz'
+                keyPassword System.getenv('SIGNING_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            if (ks.exists()) signingConfig signingConfigs.stable
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
