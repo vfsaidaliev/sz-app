@@ -229,6 +229,8 @@ details summary{font-size:14px;color:var(--muted)}
 <option value="удержания из заработной платы в размере 200 EGP">Штраф 200 EGP (второе нарушение)</option>
 <option value="удержания из заработной платы в размере 250 EGP">Штраф 250 EGP (третье нарушение)</option>
 <option value="увольнения в соответствии с Законом о труде">Увольнение (через трудовой суд)</option>
+<option value="непродления трудовых отношений">Непродление трудовых отношений</option>
+<option value="досрочного расторжения трудовых отношений">Досрочное расторжение трудовых отношений</option>
 </select>
 </div>
 <div class="item"><input type="checkbox" id="gross"><span>Это грубое нарушение</span></div>
@@ -730,6 +732,7 @@ function check(st,first=true){
   if(!measure()){al("Выберите взыскание или нажмите «Решит блок безопасности»");return false}
   const gross=$("gross").checked;
   if(P.cat=="local"){
+   if(/досрочного расторжения/.test($("locm").value)&&!gross&&!askP("Предложено досрочное расторжение трудовых отношений, а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
    if(/150 EGP/.test($("locm").value)&&!ids.includes("face")&&!askP("Штраф 150 EGP предусмотрен за отсутствие отметки FACE ID, а это нарушение не отмечено. Оставить как есть?"))return false;
   }else{
    const disc=$("disc").value;
