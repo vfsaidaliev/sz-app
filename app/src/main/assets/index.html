@@ -60,6 +60,7 @@ pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px so
 .nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:10px 12px;background:var(--glass);border-top:1px solid var(--glass-b);
  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 .nav button{margin:0}
+.mail.num span{font-size:15px}.mail.num input{min-width:70px;text-align:center}
 .mail{display:flex;align-items:center;gap:6px}.mail input{flex:1}.mail span{font-size:16px;white-space:nowrap;color:var(--muted)}
 .res{cursor:pointer}.res b{font-weight:500}
 .sp{position:fixed;inset:0;z-index:20;overflow-y:auto;padding:12px;box-sizing:border-box;
@@ -241,6 +242,9 @@ details summary{font-size:14px;color:var(--muted)}
 <div class="step" id="s5">
 <h2>5. Проверьте и отправьте</h2>
 <div class="dbline" id="execLine"></div>
+<label>Номер служебной записки</label>
+<div class="mail num"><span>№ 334-09/02/01-06/</span><input id="num" inputmode="numeric" placeholder="XXX" autocomplete="off"><span>-СЗ</span></div>
+<label>Дата служебной записки</label><input id="szdate" type="date">
 <pre id="out"></pre>
 <label>Кому отправить</label>
 <div class="mail"><input id="mailTo" placeholder="имя" autocapitalize="off" autocorrect="off"><span>@trest-rossem.ru</span></div>
@@ -252,7 +256,6 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Дополнительные пункты ПП Эль-Дабаа.007-2019 (через запятую)</label><input id="ppAdd">
 <label>Дополнительные пункты ПВТР (через запятую)</label><input id="pvAdd">
 <label>Иные документы (полная ссылка, каждая с новой строки)</label><textarea id="lnaAdd"></textarea>
-<div class="two"><div><label>Дата СЗ</label><input id="szdate" type="date"></div><div><label>Номер</label><input id="num" placeholder="[XXX]"></div></div>
 <button class="alt" onclick="make()">Обновить текст</button>
 </details>
 <button class="alt" onclick="clearAll()">Новая записка (очистить всё)</button>
@@ -654,7 +657,7 @@ function make(){
  b=dot(b);att=att.map(dot);
  /* структура записки: из неё собираются и текст, и DOCX */
  const spos=signPos(SIGN.pos||U);
- SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+jn(ps.map(p=>p.g)),addr:R.addr,greet:R.greet,
+ SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+numSZ()+"-СЗ",otn:"В отношении "+jn(ps.map(p=>p.g)),addr:R.addr,greet:R.greet,
   body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[spos,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U],
   who:jn(ps.map(p=>p.g)),first:p0.n};
  const txt=SZ.head.join("\n")+"\n\n"+SZ.unit+"\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+SZ.date+" № "+SZ.num+"\n\n"+SZ.otn+
@@ -662,6 +665,8 @@ function make(){
   "\n\n"+SZ.sign.join("\t\t")+"\n\n"+SZ.exec.join("\n");
  $("out").textContent=txt;save();return txt;
 }
+/* номер СЗ: только регистрационный номер; если вставлен целиком («334-09/02/01-06/624-СЗ») — берётся «624» */
+function numSZ(){const x=$("num").value.trim().replace(/\s+/g,"").replace(/-?СЗ$/i,"").split("/").pop().replace(/^-+|-+$/g,"");return x||"[XXX]"}
 function letter(withText){
  const t=make();
  return "Исполнитель: "+(EXEC.fio||U)+(EXEC.tel?", тел. "+EXEC.tel:"")+
@@ -669,8 +674,9 @@ function letter(withText){
 }
 function sendMail(){
  for(let st=1;st<N;st++)if(!checkAll(st)){step=st;refresh();window.scrollTo(0,0);return}
+ if(numSZ()=="[XXX]"&&!ACK.has("num")){if(!confirm("Номер служебной записки не указан. Отправить с [XXX] вместо номера?"))return;ACK.add("num")}
  if(!SIGN.name||!EXEC.fio){alert("Укажите "+(!SIGN.name?"подписанта":"исполнителя")+" в «Настройках» — данные запомнятся на этом телефоне");openSettings();return}
- if($("szdate").value&&$("szdate").value<$("date").value){alert("Дата служебной записки раньше даты нарушения. Исправьте в разделе «Для блока безопасности».");return}
+ if($("szdate").value&&$("szdate").value<$("date").value){alert("Дата служебной записки раньше даты нарушения. Исправьте поле «Дата служебной записки».");return}
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
  if(!name){alert("Впишите, кому отправить (часть адреса до @)");return}
  make();const to=name+DOMAIN,subj="СЗ в отношении "+SZ.who+" от "+d($("date").value);
@@ -1065,6 +1071,7 @@ F.forEach(f=>{$(f).addEventListener("change",()=>{refresh();save()});$(f).addEve
 ["fioN","fioG","fioA"].forEach(f=>$(f).addEventListener("input",()=>{manual[f]=!!$(f).value.trim();save()}));
 $("fioFull").addEventListener("input",autoFio);
 $("q").addEventListener("input",search);
+["num","szdate"].forEach(k=>$(k).addEventListener("input",()=>{if(step==N)make()}));
 $("cq").addEventListener("input",ckSearch);
 $("fioFull").addEventListener("input",fioHint);
 $("fioFull").addEventListener("blur",()=>setTimeout(()=>$("fioRes").style.display="none",150));
