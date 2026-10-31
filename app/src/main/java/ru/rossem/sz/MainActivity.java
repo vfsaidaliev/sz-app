@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.view.View;
@@ -24,6 +25,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -35,6 +37,8 @@ import java.util.List;
 
 public class MainActivity extends Activity {
     private static final int PICK_BASE = 1;
+    private static final int PHOTO_CAM = 2;
+    private static final int PHOTO_GAL = 3;
     private WebView web;
     private String pendingBase;
 
@@ -92,9 +96,45 @@ public class MainActivity extends Activity {
         return "";
     }
 
+    private File camFile() {
+        File d = new File(getCacheDir(), "cam");
+        if (!d.exists()) d.mkdirs();
+        return new File(d, "cam.jpg");
+    }
+
+    /* снятые или выбранные фото обрабатываются в фоне; id передаются в index.html через photoAdded([...]) */
+    private void addPhotos(final List<Uri> uris, final boolean fromCam) {
+        new Thread(new Runnable() {
+            public void run() {
+                JSONArray ids = new JSONArray();
+                String err = null;
+                for (Uri u : uris) {
+                    try {
+                        InputStream in = fromCam ? new FileInputStream(camFile()) : getContentResolver().openInputStream(u);
+                        ids.put(Photos.add(MainActivity.this, in));
+                    } catch (Throwable e) {
+                        err = "Не удалось добавить фото: " + e.getMessage();
+                    }
+                }
+                if (fromCam) camFile().delete();
+                js("photoAdded(" + ids.toString() + (err != null ? "," + JSONObject.quote(err) : "") + ")");
+            }
+        }).start();
+    }
+
     /* выбранный файл Excel читается в фоне; результат забирает index.html через baseTake() */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PHOTO_CAM || requestCode == PHOTO_GAL) {
+            if (resultCode != RESULT_OK) return;
+            List<Uri> uris = new ArrayList<Uri>();
+            if (requestCode == PHOTO_CAM) uris.add(null);
+            else if (data != null && data.getClipData() != null)
+                for (int i = 0; i < data.getClipData().getItemCount(); i++) uris.add(data.getClipData().getItemAt(i).getUri());
+            else if (data != null && data.getData() != null) uris.add(data.getData());
+            if (!uris.isEmpty()) addPhotos(uris, requestCode == PHOTO_CAM);
+            return;
+        }
         if (requestCode != PICK_BASE) return;
         if (resultCode != RESULT_OK || data == null || data.getData() == null) {
             js("baseError('')");
@@ -128,19 +168,23 @@ public class MainActivity extends Activity {
         });
     }
 
-    private Intent mailIntent(String to, String subject, String body, String name, Uri uri) {
-        Intent send = new Intent(Intent.ACTION_SEND);
-        send.setType(DocProvider.MIME);
+    /* одно вложение — ACTION_SEND, несколько (СЗ и фото) — ACTION_SEND_MULTIPLE */
+    private Intent mailIntent(String to, String subject, String body, ArrayList<Uri> uris) {
+        Intent send = new Intent(uris.size() > 1 ? Intent.ACTION_SEND_MULTIPLE : Intent.ACTION_SEND);
+        send.setType(uris.size() > 1 ? "*/*" : DocProvider.MIME);
         send.putExtra(Intent.EXTRA_EMAIL, new String[]{to});
         send.putExtra(Intent.EXTRA_SUBJECT, subject);
         send.putExtra(Intent.EXTRA_TEXT, body);
-        send.putExtra(Intent.EXTRA_STREAM, uri);
-        send.setClipData(ClipData.newRawUri(name, uri));
+        if (uris.size() > 1) send.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+        else send.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+        ClipData clip = ClipData.newRawUri("", uris.get(0));
+        for (int i = 1; i < uris.size(); i++) clip.addItem(new ClipData.Item(uris.get(i)));
+        send.setClipData(clip);
         send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         return send;
     }
 
-    private void chooseMail(String to, String subject, String body, String name, Uri uri) {
+    private void chooseMail(String to, String subject, String body, ArrayList<Uri> uris) {
         PackageManager pm = getPackageManager();
         Intent probe = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
         List<ResolveInfo> found = pm.queryIntentActivities(probe, 0);
@@ -151,16 +195,16 @@ public class MainActivity extends Activity {
             String pkg = ri.activityInfo.packageName;
             if (seen.contains(pkg)) continue;
             seen.add(pkg);
-            Intent send = mailIntent(to, subject, body, name, uri);
+            Intent send = mailIntent(to, subject, body, uris);
             send.setPackage(pkg);
             if (send.resolveActivity(pm) == null) continue;
-            grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            for (Uri u : uris) grantUriPermission(pkg, u, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intents.add(send);
             labels.add(ri.loadLabel(pm));
         }
         if (intents.isEmpty()) {
             try {
-                startActivity(Intent.createChooser(mailIntent(to, subject, body, name, uri), "Отправить СЗ"));
+                startActivity(Intent.createChooser(mailIntent(to, subject, body, uris), "Отправить СЗ"));
             } catch (Exception e) {
                 toast("Не найдено почтовое приложение");
             }
@@ -277,7 +321,59 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void emailDocx(String to, String subject, String body, String fileName, String base64) {
+        public void photoCamera() {
+            Uri uri = Uri.parse("content://" + DocProvider.AUTHORITY + "/cam/cam.jpg");
+            camFile().delete();
+            Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            i.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            i.setClipData(ClipData.newRawUri("", uri));
+            i.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try {
+                startActivityForResult(i, PHOTO_CAM);
+            } catch (Exception e) {
+                toast("Не найдено приложение камеры");
+            }
+        }
+
+        @JavascriptInterface
+        public void photoGallery() {
+            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType("image/*");
+            i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            try {
+                startActivityForResult(i, PHOTO_GAL);
+            } catch (Exception e) {
+                toast("Не найдена галерея");
+            }
+        }
+
+        @JavascriptInterface
+        public String photoThumb(String id) {
+            return Photos.thumb(MainActivity.this, id);
+        }
+
+        @JavascriptInterface
+        public void photoDelete(String id) {
+            File f = Photos.file(MainActivity.this, id);
+            if (f != null) f.delete();
+        }
+
+        /* удалить фото, которых нет в списке записки (после очистки или сбоя) */
+        @JavascriptInterface
+        public void photoKeep(String json) {
+            try {
+                JSONArray a = new JSONArray(json);
+                List<String> keep = new ArrayList<String>();
+                for (int i = 0; i < a.length(); i++) keep.add(a.getString(i));
+                File[] all = Photos.dir(MainActivity.this).listFiles();
+                if (all != null) for (File f : all) if (!keep.contains(f.getName())) f.delete();
+            } catch (Exception e) {
+            }
+        }
+
+        @JavascriptInterface
+        public void emailDocx(String to, String subject, String body, String fileName, String base64, String photosJson) {
             try {
                 String name = new File(fileName).getName();
                 File dir = new File(getCacheDir(), "docs");
@@ -289,11 +385,28 @@ public class MainActivity extends Activity {
                 out.write(Base64.decode(base64, Base64.DEFAULT));
                 out.close();
 
-                final Uri uri = Uri.parse("content://" + DocProvider.AUTHORITY + "/" + Uri.encode(name));
-                final String fTo = to, fSubject = subject, fBody = body, fName = name;
+                final ArrayList<Uri> uris = new ArrayList<Uri>();
+                uris.add(Uri.parse("content://" + DocProvider.AUTHORITY + "/" + Uri.encode(name)));
+                /* фото — отдельными вложениями: «<имя СЗ>_фото_1.jpg» … */
+                JSONArray ph = new JSONArray(photosJson == null || photosJson.isEmpty() ? "[]" : photosJson);
+                String base = name.replaceAll("\\.docx$", "");
+                for (int i = 0; i < ph.length(); i++) {
+                    File src = Photos.file(MainActivity.this, ph.getString(i));
+                    if (src == null || !src.exists()) continue;
+                    String pn = base + "_фото_" + (i + 1) + ".jpg";
+                    FileInputStream in = new FileInputStream(src);
+                    FileOutputStream po = new FileOutputStream(new File(dir, pn));
+                    byte[] buf = new byte[65536];
+                    int k;
+                    while ((k = in.read(buf)) > 0) po.write(buf, 0, k);
+                    in.close();
+                    po.close();
+                    uris.add(Uri.parse("content://" + DocProvider.AUTHORITY + "/" + Uri.encode(pn)));
+                }
+                final String fTo = to, fSubject = subject, fBody = body;
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        chooseMail(fTo, fSubject, fBody, fName, uri);
+                        chooseMail(fTo, fSubject, fBody, uris);
                     }
                 });
             } catch (Exception e) {

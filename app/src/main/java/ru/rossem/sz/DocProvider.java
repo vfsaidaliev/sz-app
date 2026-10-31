@@ -15,9 +15,17 @@ public class DocProvider extends ContentProvider {
     public static final String AUTHORITY = "ru.rossem.sz.docs";
     public static final String MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+    /* content://…/имя — вложения письма (cache/docs, только чтение);
+       content://…/cam/имя — снимок камеры (cache/cam, камера записывает в него) */
+    private boolean cam(Uri uri) {
+        return uri.getPathSegments().size() > 1 && "cam".equals(uri.getPathSegments().get(0));
+    }
+
     private File file(Uri uri) {
         String name = new File(uri.getLastPathSegment()).getName();
-        return new File(new File(getContext().getCacheDir(), "docs"), name);
+        File dir = new File(getContext().getCacheDir(), cam(uri) ? "cam" : "docs");
+        if (!dir.exists()) dir.mkdirs();
+        return new File(dir, name);
     }
 
     @Override
@@ -28,13 +36,14 @@ public class DocProvider extends ContentProvider {
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         File f = file(uri);
+        if (cam(uri)) return ParcelFileDescriptor.open(f, ParcelFileDescriptor.parseMode(mode));
         if (!f.exists()) throw new FileNotFoundException();
         return ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
     }
 
     @Override
     public String getType(Uri uri) {
-        return MIME;
+        return uri.getLastPathSegment().toLowerCase().endsWith(".jpg") ? "image/jpeg" : MIME;
     }
 
     @Override
