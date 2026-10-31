@@ -86,6 +86,8 @@ pre{white-space:pre-wrap;background:var(--field);color:var(--text);border:1px so
 .ph button{width:36px;height:36px;flex:none;padding:0;margin:0;border-radius:50%;background:var(--chip);color:var(--text);font-size:15px}
 .psbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.psbar:empty{display:none}
 .psbar button{width:auto;margin:0;padding:8px 12px;font-size:14px;border-radius:16px;background:var(--field);color:var(--text);border:1px solid var(--field-b)}
+.pchip{display:inline-flex;align-items:center;gap:2px}
+.psbar button.x{padding:8px 11px;border-radius:50%;background:var(--chip);border:1px solid var(--line);font-size:13px;line-height:1}
 .psbar button.on{border-color:var(--accent);background:var(--sel);font-weight:600}.psbar button.add{background:var(--chip);border-style:dashed}
 .pph{font-size:14px;color:var(--accent);font-weight:600;margin:-6px 0 8px}.pph:empty{display:none}
 details summary{font-size:14px;color:var(--muted)}
@@ -397,16 +399,18 @@ function writePerson(o){PF.forEach(k=>setv(k,o.f[k]!=null?o.f[k]:($(k).type=="ch
 function syncCur(){if(PS.length)PS[CUR]=readPerson()}
 function showPerson(i,quiet){syncCur();CUR=i;writePerson(PS[i]);$("fioRes").style.display="none";if(!quiet){refresh();save();window.scrollTo(0,0)}}
 function addPerson(){syncCur();PS.push(emptyPerson());showPerson(PS.length-1,1);step=1;openG="";refresh();save();window.scrollTo(0,0)}
-function delPerson(i){if(PS.length<2)return;const nm=PS[i].f.fioN||("нарушителя "+(i+1));
- if(!confirm("Убрать из записки "+nm+"?"))return;syncCur();PS.splice(i,1);CUR=Math.min(CUR>i?CUR-1:CUR,PS.length-1);writePerson(PS[CUR]);refresh();save()}
+function delPerson(i){if(PS.length<2)return;syncCur();
+ const o=PS[i],empty=!o.v.length&&!String(o.f.fioFull||"").trim(),nm=String(o.f.fioN||"").trim()||("нарушителя "+(i+1));
+ if(!empty&&!confirm("Убрать из записки "+nm+"? Его данные будут удалены."))return;PS.splice(i,1);CUR=Math.min(CUR>i?CUR-1:CUR,PS.length-1);writePerson(PS[CUR]);refresh();save()}
 function pname(o,i){return (o.f.fioN||"").trim()||"Нарушитель "+(i+1)}
 /* нарушения всех нарушителей (для общего места) */
 function allChosen(){return PS.flatMap((o,i)=>i==CUR?chosen():o.v.map(id=>V.find(x=>x.id==id)).filter(Boolean))}
 function psBar(){
  const on=step<N;$("psBar").style.display=on?"":"none";if(!on)return;
  const multi=PS.length>1,cn=$("fioN").value.trim();
- $("psBar").innerHTML=PS.map((o,i)=>"<button class='"+(i==CUR?"on":"")+"' onclick='showPerson("+i+")'>"+(i+1)+". "+esc(i==CUR?(cn||"Нарушитель "+(i+1)):pname(o,i))+
-  (multi&&i==CUR?" <span onclick='event.stopPropagation();delPerson("+i+")' aria-label='Убрать'>✕</span>":"")+"</button>").join("")+
+ /* крестик — отдельной кнопкой у каждого нарушителя (вложенный в кнопку значок на телефоне не нажимается) */
+ $("psBar").innerHTML=PS.map((o,i)=>"<span class='pchip'><button class='"+(i==CUR?"on":"")+"' onclick='showPerson("+i+")'>"+(i+1)+". "+esc(i==CUR?(cn||"Нарушитель "+(i+1)):pname(o,i))+"</button>"+
+  (multi?"<button class='x' onclick='delPerson("+i+")' aria-label='Убрать нарушителя'>✕</button>":"")+"</span>").join("")+
   "<button class='add' onclick='addPerson()'>＋ Нарушитель</button>";
  document.querySelectorAll(".pph").forEach(e=>e.textContent=multi?"Нарушитель "+(CUR+1)+(cn?": "+cn:""):"");
 }
