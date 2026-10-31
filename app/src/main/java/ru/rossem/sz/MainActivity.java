@@ -23,6 +23,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -40,6 +41,10 @@ public class MainActivity extends Activity {
     private static final int PHOTO_CAM = 2;
     private static final int PHOTO_GAL = 3;
     private WebView web;
+    /* вызовы JS до окончания загрузки страницы откладываются (например, результат камеры,
+       если система выгрузила приложение, пока камера была открыта) */
+    private boolean ready;
+    private final List<String> queue = new ArrayList<String>();
     private String pendingBase;
 
     @Override
@@ -59,6 +64,14 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         web.addJavascriptInterface(new Bridge(), "Android");
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView v, String url) {
+                ready = true;
+                for (String c : queue) web.evaluateJavascript(c, null);
+                queue.clear();
+            }
+        });
         web.loadUrl("file:///android_asset/index.html");
         setContentView(web);
     }
@@ -79,7 +92,8 @@ public class MainActivity extends Activity {
     private void js(final String code) {
         runOnUiThread(new Runnable() {
             public void run() {
-                web.evaluateJavascript(code, null);
+                if (ready) web.evaluateJavascript(code, null);
+                else queue.add(code);
             }
         });
     }

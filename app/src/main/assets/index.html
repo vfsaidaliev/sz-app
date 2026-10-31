@@ -185,8 +185,8 @@ details summary{font-size:14px;color:var(--muted)}
 <small class="h" id="phHint">Фото войдут в фототаблицу в конце служебной записки (по 2 на лист), в «Приложениях» появится строка «Фототаблица». Описание к фото — необязательно.</small>
 </div>
 
-<!-- ШАГ 5 -->
-<div class="step" id="s5">
+<!-- ШАГ 4 -->
+<div class="step" id="s4">
 <h2>4. Какое наказание предложить?</h2>
 <div class="pick" data-f="mode"><button data-v="sb">Решит блок безопасности</button><button data-v="set">Выбрать самому</button></div>
 <div id="mSet">
@@ -219,8 +219,8 @@ details summary{font-size:14px;color:var(--muted)}
 </div>
 </div>
 
-<!-- ШАГ 6 -->
-<div class="step" id="s6">
+<!-- ШАГ 5 -->
+<div class="step" id="s5">
 <h2>5. Проверьте и отправьте</h2>
 <div class="dbline" id="execLine"></div>
 <pre id="out"></pre>
@@ -314,7 +314,7 @@ const U="[уточнить]";
  место можно дописать или вписать своими словами — запрещены только кнопки недопустимых мест */
 const PLACES={S:"на территории Площадки сооружения АЭС «Эль-Дабаа»",Z:"на территории жилого посёлка ",K:"на КПП № ",B:"в служебном автобусе ",O:"в общественном месте ",X:"в г. ",X2:"в населённом пункте ",X3:"на автодороге ",X4:"в районе "};
 /* взаимоисключающие нарушения */
-const CONFLICT=[["late","absent"],["early","absent"],["absent","personal"],["absent","alcoW"],["absent","order"]];
+const CONFLICT=[["late","absent"],["early","absent"],["absent","personal"],["absent","alcoW"],["absent","order"],["late","nowarn"],["early","nowarn"]];
 /* ===== ГРУППЫ И ВИДЫ НАРУШЕНИЙ =====
  n — как видит работник; t — текст в СЗ [он, она]; wh — допустимые места (см. PLACES);
  pp — пункты ПП 007; pv — ПВТР для всех; pf — только иностранным; pl — только местным;
@@ -541,6 +541,7 @@ function letter(withText){
   (withText?"\n\nПроект служебной записки:\n\n"+t:"\n\nСлужебная записка"+(PH.length?" с фототаблицей":"")+" во вложении.");
 }
 function sendMail(){
+ for(let st=1;st<N;st++)if(!check(st)){step=st;refresh();window.scrollTo(0,0);return}
  if(!EXEC.fio){alert("Укажите исполнителя в «Настройках» — он запомнится на этом телефоне");openSettings();return}
  if($("szdate").value&&$("szdate").value<$("date").value){alert("Дата служебной записки раньше даты нарушения. Исправьте в разделе «Для блока безопасности».");return}
  const name=$("mailTo").value.trim().replace(/@.*$/,"");
@@ -560,7 +561,10 @@ function copyTxt(){const t=make();
  if(window.Android&&Android.copy)Android.copy(t);
  else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>alert("Текст скопирован"));
 }
-/* ===== ПРОВЕРКА ЛОГИКИ перед переходом на следующий шаг: false — остаться ===== */
+/* ===== ПРОВЕРКА ЛОГИКИ перед переходом на следующий шаг и перед отправкой: false — остаться =====
+ ask — вопрос «оставить как есть?»; согласие запоминается до «Новой записки», чтобы не спрашивать повторно */
+const ACK=new Set();
+function ask(m){if(ACK.has(m))return true;const r=confirm(m);if(r)ACK.add(m);return r}
 function check(st){
  const c=chosen(),ids=c.map(x=>x.id),nm=id=>"«"+V.find(x=>x.id==id).n+"»";
  if(st==1){
@@ -574,16 +578,16 @@ function check(st){
   const fio=$("fioFull").value.trim();
   if(!fio){alert("Впишите ФИО нарушителя");return false}
   const sx=sexOf(fio);
-  if(sx&&sx!=P.sex&&!confirm("По отчеству «"+fio.split(/\s+/).pop()+"» нарушитель — "+(sx=="f"?"женщина":"мужчина")+", а выбрано «"+(P.sex=="f"?"Женщина":"Мужчина")+"». Оставить как есть?"))return false;
+  if(sx&&sx!=P.sex&&!ask("По отчеству «"+fio.split(/\s+/).pop()+"» нарушитель — "+(sx=="f"?"женщина":"мужчина")+", а выбрано «"+(P.sex=="f"?"Женщина":"Мужчина")+"». Оставить как есть?"))return false;
   const cit=$("cit").value,eg=cit=="Арабской Республики Египет";
-  if(cit&&cit!="*"&&P.cat=="local"&&!eg&&!confirm("Выбран «Местный работник», а гражданство — не Египет. Оставить как есть?"))return false;
-  if(P.cat=="foreign"&&eg&&!confirm("Выбран «Иностранный работник», а гражданство — Египет. Оставить как есть?"))return false;
+  if(cit&&cit!="*"&&P.cat=="local"&&!eg&&!ask("Выбран «Местный работник», а гражданство — не Египет. Оставить как есть?"))return false;
+  if(P.cat=="foreign"&&eg&&!ask("Выбран «Иностранный работник», а гражданство — Египет. Оставить как есть?"))return false;
   const dob=$("dob").value;
   if(dob){const a=(new Date(today())-new Date(dob))/31557600000;
    if(a<0){alert("Дата рождения позже сегодняшней даты");return false}
    if(a<16){alert("По дате рождения работнику меньше 16 лет. Проверьте дату.");return false}
-   if(a>80&&!confirm("По дате рождения работнику больше 80 лет. Оставить как есть?"))return false}
-  if($("tab").value.trim()&&!/^\d+$/.test($("tab").value.trim())&&!confirm("Табельный номер содержит не только цифры. Оставить как есть?"))return false;
+   if(a>80&&!ask("По дате рождения работнику больше 80 лет. Оставить как есть?"))return false}
+  if($("tab").value.trim()&&!/^\d+$/.test($("tab").value.trim())&&!ask("Табельный номер содержит не только цифры. Оставить как есть?"))return false;
  }
  if(st==3){
   const dt=$("date").value;
@@ -595,12 +599,26 @@ function check(st){
    const bad=Object.keys(PLACES).find(k=>!keys(a).includes(k)&&pv.startsWith(PLACES[k].trim()));
    if(bad){alert("Место «"+PLACES[bad].trim()+"» не подходит к отмеченному нарушению");return false}
    if(/№\s*$/.test(pv)){alert("Укажите номер КПП");return false}
-   if(/(в г\.|пункте|автодороге|районе|автобусе|месте)\s*$/.test(pv)&&confirm("Место указано не полностью: «"+pv+"». Дописать?\n\nОК — дописать, Отмена — оставить так."))return false}
+   if(/(в г\.|пункте|автодороге|районе|автобусе|месте)\s*$/.test(pv)&&!ACK.has("place:"+pv)){
+    if(confirm("Место указано не полностью: «"+pv+"». Дописать?\n\nОК — дописать, Отмена — оставить так."))return false;ACK.add("place:"+pv)}}
+  /* режим тишины — с 22:00 до 8:00 */
+  if(ids.includes("noise")&&$("time").value&&$("time").value>="08:00"&&$("time").value<"22:00"){alert("«"+V.find(x=>x.id=="noise").n+"» — режим тишины действует с 22:00 до 8:00, а указано время "+$("time").value+". Исправьте время или нарушение.");return false}
   if(c.some(x=>x.med)&&P.medQ=="yes"){const mg=parseFloat($("mg").value.replace(",","."));
-   if(isNaN(mg)&&!confirm("Не указаны показания алкотестера. Продолжить без них?"))return false;
-   if(mg===0&&!confirm("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
+   if(isNaN(mg)&&!ask("Не указаны показания алкотестера. Продолжить без них?"))return false;
+   if(mg===0&&!ask("Показания алкотестера 0 мг/л — опьянение не подтверждено. Оставить нарушение как есть?"))return false}
  }
- if(st==4&&P.mode=="set"&&!measure()){alert("Выберите взыскание или нажмите «Решит блок безопасности»");return false}
+ if(st==4&&P.mode=="set"){
+  if(!measure()){alert("Выберите взыскание или нажмите «Решит блок безопасности»");return false}
+  const gross=$("gross").checked;
+  if(P.cat=="local"){
+   if(/150 EGP/.test($("locm").value)&&!ids.includes("face")&&!ask("Штраф 150 EGP предусмотрен за отсутствие отметки FACE ID, а это нарушение не отмечено. Оставить как есть?"))return false;
+  }else{
+   const disc=$("disc").value;
+   if($("opOn").checked){const pc=$("opPct").value.trim();if(!/^\d+$/.test(pc)||+pc<1||+pc>100){alert("Укажите, на сколько процентов снизить оперативную премию: от 1 до 100");return false}}
+   if(/увольнения/.test(disc)&&!gross&&!ask("Предложено увольнение, а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
+   if(disc=="замечания"&&gross&&!ask("Отмечено грубое нарушение, а предложено замечание. Оставить как есть?"))return false;
+  }
+ }
  return true;
 }
 /* ===== ФОТО-ДОКАЗАТЕЛЬСТВА (файлы хранит MainActivity, здесь — их id) ===== */
@@ -616,13 +634,13 @@ function photoAdded(ids,err){PH=PH.concat(ids||[]);phRender();save();if(err)aler
 function phDel(i){if(!confirm("Удалить фото "+(i+1)+"?"))return;const id=PH.splice(i,1)[0];if(Android.photoDelete)Android.photoDelete(id);delete TH[id];delete PC[id];phRender();save()}
 /* системная кнопка «Назад»: шаг назад; false — закрыть приложение */
 function back(){if($("ck").style.display==""){if($("ckCard").style.display==""){ckBack();return true}closeCheck();return true}if($("st").style.display==""){closeSettings();return true}if($("sp").style.display==""){closeSearch();return true}if(step>1){go(-1);return true}return false}
-function clearAll(){if(!confirm("Начать новую записку? Всё введённое будет удалено."))return;
+function clearAll(quiet){if(!quiet&&!confirm("Начать новую записку? Всё введённое будет удалено."))return;
  const keep={mailTo:$("mailTo").value,sign:$("sign").value};
  F.forEach(f=>setv(f,$(f).type=="checkbox"?false:""));V.forEach(x=>$("v_"+x.id).checked=false);
  Object.assign(P,{cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"});manual={};
  ["mailTo","sign"].forEach(k=>setv(k,keep[k]));
  closeSearch();$("fioRes").style.display="none";
- PH=[];PC={};if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
+ ACK.clear();PH=[];PC={};if(window.Android&&Android.photoKeep)Android.photoKeep("[]");phRender();
  $("date").value=today();$("szdate").value=today();$("out").textContent="";step=1;openG="";refresh();save();window.scrollTo(0,0)}
 /* ===== БАЗА РАБОТНИКОВ (файл Excel из учётной системы, с любым именем и порядком колонок) =====
  колонка для каждого поля определяется по заголовку и по содержимому, затем проверяется
@@ -741,11 +759,11 @@ function find(q0){
  /* текст из 1 буквы — начало слова, длиннее — любая часть слова;
     число — начало таб. №, или отдельное число (1–2 цифры, № участка), или начало числа;
     «участок 6», «цех 1», «группа 2», «отдел …» — число относится к подразделению */
- const tk=q.split(" "),w=[];
+ const tk=q.split(" "),w=[],rx=x=>x.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");
  tk.forEach((t,i)=>{const pr=tk[i-1]||"";
-  if(/^\d+$/.test(t)&&/^(участ|цех|групп|отдел|эо)/.test(pr)){w.pop();const re=new RegExp(pr+"[^ ]* "+t+"( |$)");w.push(i=>re.test(BASE.hay[i]))}
+  if(/^\d+$/.test(t)&&/^(участ|цех|групп|отдел|эо)/.test(pr)){w.pop();const re=new RegExp(rx(pr)+"[^ ]* "+t+"( |$)");w.push(i=>re.test(BASE.hay[i]))}
   else if(/^\d+$/.test(t)){const re=new RegExp("(^| )"+t+(t.length<3?"( |$)":""));w.push(i=>BASE.rows[i][0].startsWith(t)||re.test(BASE.hay[i]))}
-  else if(t.length<2){const re=new RegExp("(^| |-)"+t);w.push(i=>re.test(BASE.hay[i]))}
+  else if(t.length<2){const re=new RegExp("(^| |-)"+rx(t));w.push(i=>re.test(BASE.hay[i]))}
   else w.push(i=>BASE.hay[i].includes(t))});
  /* порядок: точный таб. №, начало таб. №, начало фамилии, начало любого слова ФИО, остальные */
  const t0=tk[0],score=i=>{const r=BASE.rows[i],f=BASE.fn[i];
@@ -789,7 +807,10 @@ function ckShow(i){
  $("ckList").style.display="none";$("ckCard").style.display="";$("cq").blur();window.scrollTo(0,0);$("ck").scrollTop=0}
 function ckBack(){$("ckCard").style.display="none";$("ckList").style.display="";$("cq").focus()}
 /* начать СЗ: данные работника — в шаг 2, сам мастер — с шага 1 */
-function ckSz(i){pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
+function ckSz(i){
+ const draft=chosen().length||$("fioFull").value.trim()||PH.length;
+ if(draft&&!confirm("Начать новую записку на этого работника? Текущий черновик будет очищен."))return;
+ clearAll(1);pickRow(i);closeCheck();step=1;refresh();save();window.scrollTo(0,0)}
 function openSearch(){$("sp").style.display="";$("q").value="";search();$("q").focus()}
 function closeSearch(){$("sp").style.display="none";$("q").blur()}
 function sexOf(fio){const w=norm(fio).split(" ").filter(x=>x!="-"),l=w[w.length-1]||"";
