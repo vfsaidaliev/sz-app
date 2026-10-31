@@ -22,7 +22,9 @@ jobs:
         run: echo "$SIGNING_KEYSTORE" | base64 -d > app/sz.jks
       - run: gradle assembleDebug
       - name: Чем подписан APK
-        run: if [ -f app/sz.jks ]; then echo "постоянный ключ"; else echo "ВНИМАНИЕ: отладочный ключ (секреты SIGNING_KEYSTORE и SIGNING_PASSWORD не заданы)"; fi
+        run: |
+          if [ -f app/sz.jks ]; then echo "постоянный ключ"
+          else echo "ВНИМАНИЕ: отладочный ключ (секреты SIGNING_KEYSTORE и SIGNING_PASSWORD не заданы)"; fi
       - uses: actions/upload-artifact@v4
         with:
           name: sz-app
