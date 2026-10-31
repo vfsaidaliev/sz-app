@@ -28,7 +28,9 @@ function build(z){
  z.body.forEach(function(s){B+=p(r(s),{ind:1})});
  var T=p(r(z.decision),{ind:1})+p("",{});
  if(z.att.length){z.att.forEach(function(s){T+=p(r(s),{})});T+=p("",{})+p("",{})}
- T+=p(r(z.sign[0])+tab()+r(z.sign[1]),{jc:"left",tab:1})+p("",{})+p("",{})+p("",{});
+ /* должность подписанта может быть в несколько строк: фамилия — справа на последней */
+ var sl=String(z.sign[0]).split("\n");sl.slice(0,-1).forEach(function(s){T+=p(r(s),{jc:"left"})});
+ T+=p(r(sl[sl.length-1])+tab()+r(z.sign[1]),{jc:"left",tab:1})+p("",{})+p("",{})+p("",{});
  z.exec.forEach(function(s){T+=p(r(s),{jc:"left"})});
  var F=z.photos&&z.photos.length?photoTable(z):"";
  var sect='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="567" w:bottom="1134" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr>';

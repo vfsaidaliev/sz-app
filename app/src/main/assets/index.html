@@ -271,7 +271,8 @@ details summary{font-size:14px;color:var(--muted)}
 <div class="card">
 <h2>Подписант</h2>
 <div class="hint">Подписывает служебную записку. Заполняется один раз и запоминается на этом телефоне.</div>
-<label>Должность</label><input id="sgPos" autocomplete="off" placeholder="должность подписанта">
+<label>Должность (в записке — в две строки)</label><textarea id="sgPos" rows="2" autocomplete="off" style="min-height:0" placeholder="первая строка&#10;вторая строка"></textarea>
+<small class="h">Можно вписать одной строкой — перенос будет перед словом «филиала».</small>
 <label>Инициалы и фамилия</label><input id="sgName" autocomplete="off" placeholder="И.О. Фамилия">
 <button onclick="saveSign()">Сохранить подписанта</button>
 </div>
@@ -383,6 +384,20 @@ const V=[
  {g:"ord",id:"prop",wh:"SZB",n:"Сломал или испортил имущество",t:["допустил порчу имущества Работодателя","допустила порчу имущества Работодателя"],pp:[],pv:["8.2"],pf:[],pl:[],h:"ПВТР 8.2 — бережно относиться к имуществу Работодателя"},
  {g:"oth",id:"other",wh:"SZKBOX",n:"Другое (описать)",t:["",""],pp:[],pv:[],pf:[],pl:[],h:"пункты укажет блок безопасности"}
 ];
+/* описание нарушения во множественном числе — когда у всех нарушителей записки одинаковые нарушения */
+const TP={alcoW:"находились в рабочее время с внешними признаками алкогольного опьянения",alco:"находились с внешними признаками алкогольного опьянения",
+ drink:"распивали алкогольные напитки на территории Работодателя",bring:"пронесли алкогольные напитки на площадку строительства АЭС",buy:"приобрели спиртные напитки у местных жителей",
+ drug:"находились с внешними признаками наркотического (токсического) опьянения",fight:"допустили агрессивные действия и рукоприкладство",
+ rude:"допускали грубость, крик и нецензурные выражения при общении",locals:"допустили недружественные проявления в отношении местных жителей",
+ order:"не выполнили распоряжение непосредственного руководителя",late:"опоздали на работу без уважительных причин",
+ early:"оставили рабочее место до окончания рабочего дня (смены) без уважительных причин",absent:"отсутствовали на рабочем месте без уважительных причин в течение всего рабочего дня (смены)",
+ nowarn:"не сообщили заблаговременно непосредственному руководителю о причинах невыхода на работу",face:"не произвели регистрацию в ЭСУРВ перед началом (окончанием) рабочего дня (смены)",
+ personal:"использовали рабочее время в личных целях",exit:"выехали за пределы места проживания без предварительного согласования с блоком безопасности Филиала",
+ group:"приняли участие в групповой поездке, не согласованной с заместителем директора филиала по безопасности",guest:"осуществили приём личных гостей без согласования с блоком безопасности Филиала",
+ drive:"самостоятельно управляли автотранспортным средством",pass:"передали свои пропуска другим лицам",reg:"не выполнили требования пропускного и внутриобъектового режима",
+ dev:"осуществили внос технических средств в зону, где это запрещено",photo:"осуществили фотографирование в месте, где фотосъёмка запрещена",
+ smoke:"курили вне специально отведённого места",noise:"нарушили режим тишины в ночное время",dress:"нарушили требования к внешнему виду",
+ info:"вели разговоры на служебные темы в общественном месте",prop:"допустили порчу имущества Работодателя"};
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
@@ -550,7 +565,9 @@ function pinfo(o,first){
  const c=o.v.map(id=>V.find(x=>x.id==id)).filter(Boolean),loc=o.p.cat=="local",f=o.p.sex=="f"?1:0;
  const p={o:o,c:c,loc:loc,f:f,n:vv("fioN"),g:vv("fioG"),a:vv("fioA"),tab:vv("tab"),wk:loc?"локальный работник ":"работник "};
  const cit=fv("cit")=="*"?vv("citOther"):fv("cit")||U;
- p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+vv("pos")+" "+vv("fioFull")+" ("+d(fv("dob"))+" года рождения, "+(f?"гражданка ":"гражданин ")+cit+", таб. № "+p.tab+")";
+ p.base=vv("pos")+" "+vv("fioFull")+" ("+d(fv("dob"))+" года рождения, "+(f?"гражданка ":"гражданин ")+cit+", таб. № "+p.tab+")";
+ p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+p.base;
+ p.key=c.map(x=>x.id).sort().join(",");
  p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
  p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
  p.hod=!!o.f.hod;p.hodPages=fv("hodPages").trim();
@@ -579,7 +596,11 @@ function make(){
  const ps=PS.map((o,i)=>pinfo(o,i==0)),one=ps.length==1,p0=ps[0];
  const plc=places()===""?"":" "+v("place").replace(/[,\s]+$/,"").replace(/([^г])\.$/,"$1");
  const when="Настоящим сообщаю, что "+dw($("date").value)+tw($("time").value)+plc+" ";
- let b=one?when+p0.person+" "+end(p0.acts):when+ps.map(p=>p.person+" "+p.acts).join("; ")+".";
+ /* у всех одинаковые нарушения (без «Другое») — одной фразой во множественном числе, иначе — по каждому */
+ const group=!one&&ps.every(p=>p.key==p0.key)&&p0.c.length&&p0.c.every(x=>TP[x.id]),allLoc=ps.every(p=>p.loc);
+ let b=one?when+p0.person+" "+end(p0.acts)
+  :group?when+(allLoc?"локальные работники ":"работники ")+R.filial+" (далее – Филиал) "+jn(ps.map(p=>(p.loc&&!allLoc?"локальный работник ":"")+p.base))+" "+jn(p0.c.map(x=>TP[x.id]))+"."
+  :when+ps.map(p=>p.person+" "+p.acts).join("; ")+".";
  const fact=$("fact").value.trim();if(fact)b+="\n\n"+fact;
  /* медицинское освидетельствование */
  const M=ps.filter(p=>p.med);
@@ -632,8 +653,9 @@ function make(){
  const dot=s=>s.replace(/\.\.(?=\n|$)/g,".");
  b=dot(b);att=att.map(dot);
  /* структура записки: из неё собираются и текст, и DOCX */
+ const spos=signPos(SIGN.pos||U);
  SZ={head:R.head,unit:R.unit,date:d($("szdate").value)+" г.",num:R.num+v("num","[XXX]")+"-СЗ",otn:"В отношении "+jn(ps.map(p=>p.g)),addr:R.addr,greet:R.greet,
-  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[SIGN.pos||U,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U],
+  body:b.split("\n").map(s=>s.trim()).filter(s=>s),decision:"На Ваше решение.",att:att,sign:[spos,SIGN.name||U],exec:[EXEC.fio||U,EXEC.tel||U],
   who:jn(ps.map(p=>p.g)),first:p0.n};
  const txt=SZ.head.join("\n")+"\n\n"+SZ.unit+"\n\nСЛУЖЕБНАЯ ЗАПИСКА\n\n"+SZ.date+" № "+SZ.num+"\n\n"+SZ.otn+
   "\n\n"+SZ.addr.map(s=>"\t\t\t"+s).join("\n")+"\n\n"+SZ.greet+"\n\n"+b+"\n\n"+SZ.decision+(att.length?"\n\n"+att.join("\n"):"")+
@@ -915,7 +937,10 @@ function dbRefresh(){
 function openSettings(){$("st").style.display="";$("exFio").value=EXEC.fio||"";$("exTel").value=EXEC.tel||"";$("sgPos").value=SIGN.pos||"";$("sgName").value=SIGN.name||"";dbRefresh()}
 /* подписант — так же, как исполнитель: хранится отдельно и не стирается «Новой запиской» */
 let SIGN={};try{SIGN=JSON.parse(localStorage.getItem("sz_sign")||"{}")}catch(e){}
-function saveSign(){const pos=$("sgPos").value.trim().replace(/\s+/g," "),name=$("sgName").value.trim().replace(/\s+/g," ");
+/* должность подписанта в две строки: как введено, иначе — перенос перед «филиала» */
+function signPos(x){x=String(x).split("\n").map(s=>s.trim().replace(/\s+/g," ")).filter(s=>s).join("\n");if(x.includes("\n"))return x;
+ const i=x.search(/\sфилиала(\s|$)/);return i>0?x.slice(0,i)+"\n"+x.slice(i+1):x}
+function saveSign(){const pos=signPos($("sgPos").value),name=$("sgName").value.trim().replace(/\s+/g," ");
  if(!pos||!name){alert("Впишите должность, инициалы и фамилию подписанта");return}
  SIGN={pos:pos,name:name};try{localStorage.setItem("sz_sign",JSON.stringify(SIGN))}catch(e){}
  execLine();alert("Подписант сохранён");if(step==N)make()}
@@ -926,7 +951,7 @@ function saveExec(){const fio=$("exFio").value.trim().replace(/\s+/g," "),tel=$(
  if(!/\d{6,}/.test(tel.replace(/\D/g,""))){alert("Впишите телефон исполнителя");return}
  EXEC={fio:fio,tel:tel};try{localStorage.setItem("sz_exec",JSON.stringify(EXEC))}catch(e){}
  execLine();alert("Исполнитель сохранён");if(step==N)make()}
-function execLine(){$("execLine").innerHTML=(SIGN.name?"Подписант: "+esc(SIGN.pos)+" "+esc(SIGN.name):"<b>Подписант не указан.</b>")+"<br>"+
+function execLine(){$("execLine").innerHTML=(SIGN.name?"Подписант: "+esc(SIGN.pos.replace(/\n/g," "))+" "+esc(SIGN.name):"<b>Подписант не указан.</b>")+"<br>"+
  (EXEC.fio?"Исполнитель: "+esc(EXEC.fio)+", тел. "+esc(EXEC.tel):"<b>Исполнитель не указан.</b>")+" · <a onclick='openSettings()'>"+(SIGN.name&&EXEC.fio?"Изменить":"Указать")+"</a>"}
 function closeSettings(){$("st").style.display="none"}
 /* отбор по запросу: массив индексов строк базы в порядке показа */
