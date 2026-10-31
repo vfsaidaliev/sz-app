@@ -211,6 +211,8 @@ details summary{font-size:14px;color:var(--muted)}
 <option value="замечания">Замечание</option>
 <option value="выговора">Выговор</option>
 <option value="увольнения по соответствующим основаниям">Увольнение</option>
+<option value="непродления трудовых отношений">Непродление трудовых отношений</option>
+<option value="досрочного расторжения трудовых отношений">Досрочное расторжение трудовых отношений</option>
 </select>
 <div class="item"><input type="checkbox" id="opOn"><span>Снизить оперативную премию</span></div>
 <label>на сколько, %</label><input id="opPct" inputmode="numeric" placeholder="100">
@@ -732,7 +734,7 @@ function check(st,first=true){
   }else{
    const disc=$("disc").value;
    if($("opOn").checked){const pc=$("opPct").value.trim();if(!/^\d+$/.test(pc)||+pc<1||+pc>100){al("Укажите, на сколько процентов снизить оперативную премию: от 1 до 100");return false}}
-   if(/увольнения/.test(disc)&&!gross&&!askP("Предложено увольнение, а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
+   if(/увольнения|досрочного расторжения/.test(disc)&&!gross&&!askP("Предложено "+(/увольнения/.test(disc)?"увольнение":"досрочное расторжение трудовых отношений")+", а отметка «Это грубое нарушение» не стоит. Оставить как есть?"))return false;
    if(disc=="замечания"&&gross&&!askP("Отмечено грубое нарушение, а предложено замечание. Оставить как есть?"))return false;
   }
  }
