@@ -252,7 +252,7 @@ details summary{font-size:14px;color:var(--muted)}
 <div class="hint" id="dbInfo"></div>
 <button onclick="pickBase()">Загрузить файл Excel (.xlsx)</button>
 <button class="alt" id="dbDel" onclick="delBase()">Удалить базу</button>
-<small class="h">Имя файла и порядок колонок могут быть любыми. После выбора файла проверьте, из каких колонок взяты поля.</small>
+<small class="h">Выберите новый файл — база обновится сама. Имя файла и порядок колонок могут быть любыми.</small>
 </div>
 <div class="card">
 <h2>Подписант</h2>
@@ -764,7 +764,12 @@ function baseParsed(name){
  if(!rows.length){baseError("Файл пустой");return}
  const hr=headRow(rows),head=rows[hr].map(x=>String(x==null?"":x).trim()),body=rows.slice(hr+1).filter(r=>r.some(x=>String(x).trim()));
  RAW={name:name||"",head:head,body:body,map:autoMap(head,body,BASE&&BASE.memo)};
+ /* обычный случай: колонки найдены — база сохраняется сразу, без лишних действий;
+    экран «Колонки файла» — только если не найдены табельный номер или ФИО */
+ const m=RAW.map;
+ if(m.tab!=null&&(m.fio!=null||m.fam!=null&&m.nam!=null)){applyMap(1);return}
  openSettings();showMap();
+ alert("В файле не удалось найти колонки с табельным номером и ФИО. Укажите их на экране «Колонки файла».");
 }
 function showMap(){
  const n=Math.max(RAW.head.length,...RAW.body.slice(0,50).map(r=>r.length));
@@ -780,17 +785,23 @@ function mapPrev(){
  $("mapPrev").innerHTML=RAW.body.slice(0,3).map(r=>{const x=rowOf(r,RAW.map);
   return "<div class='item'><span><b>"+esc(x[1]||"ФИО —")+"</b><small class='h'>таб. № "+esc(x[0]||"—")+" · "+sx[x[6]]+" · "+(x[3]?d(x[3]):"дата рожд. —")+" · "+esc(x[2]||"гражданство —")+"<br>"+esc(x[4]||"должность —")+" · "+esc(x[5]||"подразделение —")+"</small></span></div>"}).join("");
 }
-function applyMap(){
- const m=RAW.map;
+function applyMap(auto){
+ const m=RAW.map,was=BASE?BASE.rows.length:0;
  if(m.tab==null||m.fio==null&&(m.fam==null||m.nam==null)){alert("Укажите колонки «Табельный номер» и «ФИО» (или «Фамилия» и «Имя»)");return}
  const used=Object.values(m);if(new Set(used).size!=used.length){alert("Одна колонка выбрана для двух полей. Исправьте выбор.");return}
  const list=RAW.body.map(r=>rowOf(r,m)).filter(x=>x[0]&&x[1]);
  const memo={};Object.keys(m).forEach(k=>memo[k]=RAW.head[m[k]]||"");
  const nb={name:RAW.name,date:today(),memo:memo,rows:list};
  if(!Android.baseSave(JSON.stringify(nb))){alert("Не удалось сохранить базу в памяти телефона");return}
- BASE=nb;RAW=null;$("mapBox").style.display="none";dbRefresh();
- alert("База сохранена: "+list.length+" "+pl(list.length,"работник","работника","работников"));
+ BASE=nb;LAST=RAW;RAW=null;$("mapBox").style.display="none";dbRefresh();
+ const miss=FIELDS.filter(f=>["sex","dob","cit","pos","div"].includes(f.k)&&m[f.k]==null).map(f=>f.n.toLowerCase());
+ if(auto)closeSettings();
+ alert((was?"База обновлена":"База загружена")+": "+list.length+" "+pl(list.length,"работник","работника","работников")+(was?" (было "+was+")":"")+
+  (miss.length==1?".\n\nВ файле нет колонки «"+miss[0]+"» — это поле заполняется вручную.":miss.length?".\n\nВ файле нет колонок: "+miss.join(", ")+" — эти поля заполняются вручную.":"."));
 }
+/* последний загруженный файл — для необязательной проверки колонок в «Настройках» */
+let LAST=null;
+function reMap(){if(!LAST){alert("Проверить колонки можно сразу после загрузки файла");return}RAW=LAST;showMap()}
 function cancelMap(){RAW=null;$("mapBox").style.display="none";dbRefresh()}
 function baseError(msg){dbRefresh();if(msg)alert(msg)}
 function pickBase(){if(!(window.Android&&Android.pickBase)){alert("Загрузка базы доступна только в приложении на телефоне");return}
@@ -799,7 +810,7 @@ function delBase(){if(!confirm("Удалить базу работников с 
 function dbText(){return BASE?"Загружена "+d(BASE.date)+(BASE.name?" из файла «"+BASE.name+"»":"")+", "+BASE.rows.length+" "+pl(BASE.rows.length,"работник","работника","работников"):"Не загружена"}
 function dbRefresh(){
  $("dbBox").style.display=BASE?"":"none";$("bChk1").style.display=BASE?"":"none";$("dbDel").style.display=BASE?"":"none";
- $("dbInfo").textContent=dbText();
+ $("dbInfo").innerHTML=esc(dbText())+(BASE&&LAST?" · <a onclick='reMap()'>из каких колонок взяты данные</a>":"");
  $("dbLine").innerHTML=BASE?"База от "+d(BASE.date)+", "+BASE.rows.length+" чел. · <a onclick='pickBase()'>Обновить</a>":"";
  if(BASE){BASE.rows.forEach(r=>{r[4]=fullPos(r[4]);r[5]=fullDiv(r[5])});BASE.hay=BASE.rows.map(r=>norm(r[0]+" "+r[1]+" "+r[4]+" "+r[5]));BASE.fn=BASE.rows.map(r=>norm(r[1]))}
 }
