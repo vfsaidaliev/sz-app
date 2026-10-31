@@ -186,6 +186,8 @@ details summary{font-size:14px;color:var(--muted)}
 <label>Акт об отказе от объяснений</label>
 <div class="two"><div><label>Дата акта</label><input id="refDate" type="date"></div><div><label>Листов в акте</label><input id="refPages" inputmode="numeric"></div></div>
 </div>
+<label class="item" style="margin-top:12px"><input type="checkbox" id="hod"><span>Есть ходатайство непосредственного начальника</span></label>
+<div id="hodL"><label>Листов в ходатайстве</label><input id="hodPages" inputmode="numeric"></div>
 <label>Другие составленные акты (необязательно)</label>
 <textarea id="acts" placeholder="каждый акт с новой строки: название акта ; количество листов"></textarea>
 <small class="h">Все акты попадут в «Приложения» служебной записки.</small>
@@ -378,7 +380,7 @@ const V=[
 /* ================================================= */
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const $=id=>document.getElementById(id);
-const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
+const F=["fioFull","fioN","fioG","fioA","pos","dob","tab","cit","citOther","otherText","date","time","place","fact","mg","act","actDate","actPages","refDate","refPages","hod","hodPages","explPages","acts","disc","opOn","opPct","isn","kpe","locm","gross","mailTo","att","ppAdd","pvAdd","lnaAdd","szdate","num"];
 const P={cat:"foreign",sex:"m",medQ:"no",expl:"yes",mode:"sb"};
 let step=1,openG="",manual={},SZ=null,PH=[],PC={};
 /* ===== НАРУШИТЕЛИ: в одной СЗ — один случай (дата, время, место общие), нарушителей — один или несколько;
@@ -489,7 +491,7 @@ function refresh(){
  $("otherBox").style.display=c.some(x=>x.id=="other")?"":"none";
  $("medBox").style.display=c.some(x=>x.med)?"":"none";
  $("medData").style.display=P.medQ=="yes"?"":"none";
- $("explL").style.display=P.expl=="yes"?"":"none";$("refL").style.display=P.expl=="ref"?"":"none";
+ $("explL").style.display=P.expl=="yes"?"":"none";$("refL").style.display=P.expl=="ref"?"":"none";$("hodL").style.display=$("hod").checked?"":"none";
  $("mSet").style.display=P.mode=="set"?"":"none";
  $("mForeign").style.display=loc?"none":"";$("mLocal").style.display=loc?"":"none";
  $("citOther").style.display=$("cit").value=="*"?"":"none";
@@ -543,6 +545,7 @@ function pinfo(o,first){
  p.person=p.wk+(first?R.filial+" (далее – Филиал) ":"Филиала ")+vv("pos")+" "+vv("fioFull")+" ("+d(fv("dob"))+" года рождения, "+(f?"гражданка ":"гражданин ")+cit+", таб. № "+p.tab+")";
  p.acts=jn(c.map(x=>x.id=="other"?vv("otherText"):x.t[f])).replace(/\.$/,"");
  p.med=c.some(x=>x.med)&&o.p.medQ=="yes";p.mg=vv("mg");p.act=vv("act");p.actDate=fv("actDate");p.actPages=fv("actPages").trim();
+ p.hod=!!o.f.hod;p.hodPages=fv("hodPages").trim();
  p.expl=o.p.expl;p.explPages=fv("explPages").trim();p.refDate=fv("refDate");p.refPages=fv("refPages").trim();
  let pp=[],pv=[];c.forEach(x=>{pp=pp.concat(x.pp);pv=pv.concat(x.pv,loc?x.pl:x.pf)});
  pp=uniq(pp.concat(split($("ppAdd").value)));pv=uniq(pv.concat(split($("pvAdd").value)));
@@ -608,6 +611,8 @@ function make(){
  else if(M.length>1){const same=M.every(p=>p.actDate==M[0].actDate);
   lines.push("Акты "+(same?M.map(p=>"№ "+p.act+" ("+p.n+")").join(", ")+" от "+d(M[0].actDate):M.map(p=>"№ "+p.act+" от "+d(p.actDate)+" ("+p.n+")").join(", "))+" "+MEDACT+" ; "+sumPages(M.map(p=>p.actPages)));}
  $("acts").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
+ /* ходатайства непосредственного начальника — по каждому нарушителю */
+ ps.filter(p=>p.hod).forEach(p=>lines.push("Ходатайство непосредственного начальника в отношении "+p.g+" ; "+p.hodPages));
  /* фото-доказательства — фототаблицей в конце DOCX, по 2 фото на лист */
  if(PH.length)lines.push("Фототаблица ; "+Math.ceil(PH.length/2));
  $("att").value.split("\n").map(s=>s.trim()).filter(s=>s).forEach(s=>lines.push(s));
