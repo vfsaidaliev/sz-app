@@ -1,0 +1,27 @@
+name: Phonebook build check
+
+on:
+  push:
+    branches: [ccr-3ffd2eea-n9b1uo]
+    paths: ['rossem-phonebook/**', '.github/workflows/phonebook-check.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rossem-phonebook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rossem-phonebook
+          path: rossem-phonebook/app/build/outputs/apk/release/*.apk
