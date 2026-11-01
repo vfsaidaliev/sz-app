@@ -27,6 +27,13 @@ jobs:
           ./gradlew --no-daemon assembleRelease
           cp app/build/outputs/apk/release/app-release.apk rossem-phonebook.apk
 
+      - name: Проверка разрешений (INTERNET запрещён)
+        run: |
+          BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          $BT/aapt2 dump permissions rossem-phonebook.apk | tee perms.txt
+          $BT/aapt2 dump badging rossem-phonebook.apk | grep -E "^package|sdkVersion|targetSdkVersion"
+          if grep -q "android.permission.INTERNET" perms.txt; then echo "Найдено разрешение INTERNET"; exit 1; fi
+
       - name: Публикация релиза
         uses: softprops/action-gh-release@v2
         with:
